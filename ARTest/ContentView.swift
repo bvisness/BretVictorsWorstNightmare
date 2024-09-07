@@ -16,13 +16,16 @@ struct ContentView : View {
 
 struct ARViewContainer: UIViewRepresentable {
     
+    var frameDelegate = FrameDelegate()
+    
     func makeUIView(context: Context) -> ARView {
         
         let arView = ARView(frame: .zero)
+        arView.session.delegate = frameDelegate
 
         // Create a cube model
         let mesh = MeshResource.generateBox(size: 0.1, cornerRadius: 0.005)
-        let material = SimpleMaterial(color: .gray, roughness: 0.15, isMetallic: true)
+        let material = SimpleMaterial(color: .gray, roughness: 0.05, isMetallic: true)
         let model = ModelEntity(mesh: mesh, materials: [material])
         model.transform.translation.y = 0.05
 

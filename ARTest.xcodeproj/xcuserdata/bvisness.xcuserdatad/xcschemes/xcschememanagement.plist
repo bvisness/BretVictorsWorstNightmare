@@ -9,6 +9,29 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
+		<key>apriltag.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>46B0E56C2C8147E10028ED77</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>46B0E57C2C8147E40028ED77</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>46B0E5862C8147E40028ED77</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 	</dict>
 </dict>
 </plist>
