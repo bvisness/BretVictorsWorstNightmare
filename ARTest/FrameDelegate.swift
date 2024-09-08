@@ -32,6 +32,8 @@ class FrameDelegate : NSObject, ARSessionDelegate {
             let frame = frame.capturedImage
             
             CVPixelBufferLockBaseAddress(frame, CVPixelBufferLockFlags.readOnly)
+            defer { CVPixelBufferUnlockBaseAddress(frame, CVPixelBufferLockFlags.readOnly) }
+
             let width = CVPixelBufferGetWidth(frame)
             let height = CVPixelBufferGetHeight(frame)
             let stride = CVPixelBufferGetBytesPerRowOfPlane(frame, 0)
@@ -53,7 +55,7 @@ class FrameDelegate : NSObject, ARSessionDelegate {
             // In particular, YUV already has grayscale information in the first plane, so we just
             // need to construct an image struct from that.
             
-            let img = UnsafeMutablePointer<image_u8>.allocate(capacity: MemoryLayout<image_u8>.size)
+            let img = UnsafeMutablePointer<image_u8>.allocate(capacity: 1)
             img.initialize(to: image_u8(
                 width: Int32(width),
                 height: Int32(height),
@@ -62,17 +64,15 @@ class FrameDelegate : NSObject, ARSessionDelegate {
             ))
             
             let detections = apriltag_detector_detect(detector, img)!
+            defer { apriltag_detections_destroy(detections) }
             let n = zarray_size(detections)
             print("Detected \(n) AprilTags")
-//            for i in 0..<zarray_size(detections) {
-//                let det = UnsafeMutablePointer<apriltag_detection>.allocate(capacity: MemoryLayout<apriltag_detection>.size)
-//                zarray_get(detections, Int32(i), det)
-//                
-//                det.pointee.
-//            }
-            
-            apriltag_detections_destroy(detections)
-            CVPixelBufferUnlockBaseAddress(frame, CVPixelBufferLockFlags.readOnly)
+            for i in 0..<zarray_size(detections) {
+                let det = UnsafeMutablePointer<UnsafeMutablePointer<apriltag_detection>>.allocate(capacity: 1)
+                zarray_get(detections, i, det)
+                
+                print("- Tag id \(det.pointee.pointee.id) at \(det.pointee.pointee.c)")
+            }
         }
     }
 }
