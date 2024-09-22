@@ -3,4 +3,5 @@
 //
 
 #include "apriltag.h"
+#include "apriltag_pose.h"
 #include "tagStandard41h12.h"
