@@ -92,7 +92,7 @@ class FrameDelegate : NSObject, ARSessionDelegate {
                 let tx = matd_get(t, r: 0, c: 0)
                 let ty = matd_get(t, r: 1, c: 0)
                 let tz = matd_get(t, r: 2, c: 0)
-                let (rx, ry, rz) = matd_rotation_to_euler(pose.pointee.R!)
+                let (rx, ry, rz) = matd_rotation_to_euler2(pose.pointee.R!)
                 
                 print("- Tag id \(det.pointee.pointee.id) at \(det.pointee.pointee.c)")
                 print("  Translation: \(tx), \(ty), \(tz)")
@@ -113,9 +113,34 @@ class FrameDelegate : NSObject, ARSessionDelegate {
         )
         return data[r*Int(m.pointee.ncols) + c]
     }
-
-    // From https://stackoverflow.com/a/15029416/1177139
+    
+    // Implementation patterned after https://eecs.qmul.ac.uk/~gslabaugh/publications/euler.pdf
     func matd_rotation_to_euler(_ m: UnsafeMutablePointer<matd_t>) -> (rx: Double, ry: Double, rz: Double) {
+        if matd_get(m, r: 2, c: 0) != -1 && matd_get(m, r: 2, c: 0) != 1 {
+            let y1 = -asin(matd_get(m, r: 2, c: 0))
+//            let y2 = Double.pi - y1
+            let x1 = atan2(matd_get(m, r: 2, c: 1)/cos(y1), matd_get(m, r: 2, c: 2)/cos(y1))
+//            let x2 = atan2(matd_get(m, r: 2, c: 1)/cos(y2), matd_get(m, r: 2, c: 2)/cos(y2))
+            let z1 = atan2(matd_get(m, r: 1, c: 0)/cos(y1), matd_get(m, r: 0, c: 0)/cos(y1))
+//            let z2 = atan2(matd_get(m, r: 1, c: 0)/cos(y2), matd_get(m, r: 0, c: 0)/cos(y2))
+            return (x1, y1, z1) // ignore the alternate solution
+        } else {
+            let x: Double
+            let y: Double
+            let z: Double = 0
+            if matd_get(m, r: 2, c: 0) != -1 {
+                y = Double.pi / 2
+                x = z + atan2(matd_get(m, r: 0, c: 1), matd_get(m, r: 0, c: 2))
+            } else {
+                y = -Double.pi / 2
+                x = -z + atan2(-matd_get(m, r: 0, c: 1), -matd_get(m, r: 0, c: 2))
+            }
+            return (x, y, z)
+        }
+    }
+    
+    // From https://stackoverflow.com/a/15029416/1177139
+    func matd_rotation_to_euler2(_ m: UnsafeMutablePointer<matd_t>) -> (rx: Double, ry: Double, rz: Double) {
         let r11 = matd_get(m, r: 0, c: 0)
         let r21 = matd_get(m, r: 1, c: 0)
         let r31 = matd_get(m, r: 2, c: 0)
