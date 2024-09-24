@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import ARKit
 import RealityKit
 
 struct ContentView : View {
@@ -14,34 +15,30 @@ struct ContentView : View {
     }
 }
 
+//let cubeAnchor = AnchorEntity(.plane(.horizontal, classification: .any, minimumBounds: SIMD2<Float>(0.2, 0.2)))
+let cubeAnchor = AnchorEntity(world: SIMD3<Float>(0, 0, 0))
+let cube = ModelEntity(
+    mesh: MeshResource.generateBox(size: 0.1, cornerRadius: 0.005),
+    materials: [SimpleMaterial(color: .gray, roughness: 0.05, isMetallic: true)]
+)
+
+let arView = ARView(frame: .zero)
+var frameDelegate = FrameDelegate(view: arView)
+
 struct ARViewContainer: UIViewRepresentable {
-    
-    var frameDelegate = FrameDelegate()
-    
     func makeUIView(context: Context) -> ARView {
-        
-        let arView = ARView(frame: .zero)
         arView.session.delegate = frameDelegate
 
-        // Create a cube model
-        let mesh = MeshResource.generateBox(size: 0.1, cornerRadius: 0.005)
-        let material = SimpleMaterial(color: .gray, roughness: 0.05, isMetallic: true)
-        let model = ModelEntity(mesh: mesh, materials: [material])
-        model.transform.translation.y = 0.05
-
-        // Create horizontal plane anchor for the content
-        let anchor = AnchorEntity(.plane(.horizontal, classification: .any, minimumBounds: SIMD2<Float>(0.2, 0.2)))
-        anchor.children.append(model)
+        cube.transform.translation.y = 0.05
+        cubeAnchor.children.append(cube)
 
         // Add the horizontal plane anchor to the scene
-        arView.scene.anchors.append(anchor)
+        arView.scene.anchors.append(cubeAnchor)
 
         return arView
-        
     }
     
     func updateUIView(_ uiView: ARView, context: Context) {}
-    
 }
 
 #Preview {

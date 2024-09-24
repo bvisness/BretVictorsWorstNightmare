@@ -14,9 +14,13 @@ class FrameDelegate : NSObject, ARSessionDelegate {
     var counter = 0
     
     let detector = apriltag_detector_create()!
-    let tagFamily = tagStandard41h12_create()!;
+    let tagFamily = tagStandard41h12_create()!
     
-    override init() {
+    var view: ARView
+    
+    init(view: ARView) {
+        self.view = view
+
         // After finding a good sweet spot, consider moving all the AprilTag
         // detection onto a separate thread.
         detector.pointee.quad_decimate = 10
@@ -25,6 +29,11 @@ class FrameDelegate : NSObject, ARSessionDelegate {
     }
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        let screenCenter = CGPoint(x: view.bounds.midX, y: view.bounds.midY)
+        if let result = view.raycast(from: screenCenter, allowing: .estimatedPlane, alignment: .any).first {
+            cubeAnchor.transform.translation = result.worldTransform.translation
+        }
+        
         counter += 1
         if counter == nframes {
             counter = 0
@@ -152,9 +161,4 @@ class FrameDelegate : NSObject, ARSessionDelegate {
             atan2(r21, r11)
         )
     }
-}
-
-extension FloatingPoint {
-    var deg2rad: Self { self * .pi / 180 }
-    var rad2deg: Self { self * 180 / .pi }
 }
