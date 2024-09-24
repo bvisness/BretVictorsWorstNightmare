@@ -39,6 +39,8 @@ class FrameDelegate : NSObject, ARSessionDelegate {
 //            cubeAnchor.transform.translation = result.worldTransform.translation
 //        }
         
+        cameraAnchor.transform.matrix = frame.camera.transform
+        
         apriltagCounter += 1
         qrCounter += 1
 
