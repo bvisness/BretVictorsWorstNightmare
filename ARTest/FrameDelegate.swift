@@ -6,12 +6,17 @@
 //
 
 import Foundation
-import RealityKit
+
 import ARKit
+import RealityKit
+import Vision
 
 class FrameDelegate : NSObject, ARSessionDelegate {
-    let nframes = 1
-    var counter = 0
+    let apriltagNFrames = 5
+    let qrNFrames = 30
+    
+    var apriltagCounter = 0
+    var qrCounter = 0
     
     let detector = apriltag_detector_create()!
     let tagFamily = tagStandard41h12_create()!
@@ -34,9 +39,11 @@ class FrameDelegate : NSObject, ARSessionDelegate {
 //            cubeAnchor.transform.translation = result.worldTransform.translation
 //        }
         
-        counter += 1
-        if counter == nframes {
-            counter = 0
+        apriltagCounter += 1
+        qrCounter += 1
+
+        if apriltagCounter >= apriltagNFrames {
+            apriltagCounter = 0
             
             let img = frame.capturedImage
             
@@ -122,6 +129,21 @@ class FrameDelegate : NSObject, ARSessionDelegate {
 //                print("  Translation: \(tx), \(ty), \(tz)")
 //                print("  Rotation: \(rx.rad2deg), \(ry.rad2deg), \(rz.rad2deg)")
             }
+        }
+        
+        if qrCounter >= qrNFrames {
+            qrCounter = 0
+
+            let qrRequest = VNDetectBarcodesRequest(completionHandler: { request, error in
+                guard let results = request.results else { return }
+                for result in results {
+                    if let barcode = result as? VNBarcodeObservation {
+                        // TODO: Do something with barcode.payloadStringValue
+                    }
+                }
+            })
+            let handler = VNImageRequestHandler(cvPixelBuffer: frame.capturedImage, options: [:])
+            try! handler.perform([qrRequest])
         }
     }
     
