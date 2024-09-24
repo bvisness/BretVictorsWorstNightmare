@@ -18,8 +18,8 @@ struct ContentView : View {
 //let cubeAnchor = AnchorEntity(.plane(.horizontal, classification: .any, minimumBounds: SIMD2<Float>(0.2, 0.2)))
 let cubeAnchor = AnchorEntity(world: SIMD3<Float>(0, 0, 0))
 let cube = ModelEntity(
-    mesh: MeshResource.generateBox(size: 0.1, cornerRadius: 0.005),
-    materials: [SimpleMaterial(color: .gray, roughness: 0.05, isMetallic: true)]
+    mesh: MeshResource.generateBox(size: 0.05, cornerRadius: 0.005),
+    materials: [SimpleMaterial(color: .systemGreen, roughness: 0.05, isMetallic: true)]
 )
 
 let arView = ARView(frame: .zero)
@@ -29,7 +29,7 @@ struct ARViewContainer: UIViewRepresentable {
     func makeUIView(context: Context) -> ARView {
         arView.session.delegate = frameDelegate
 
-        cube.transform.translation.y = 0.05
+        cube.transform.translation.z = -0.025
         cubeAnchor.children.append(cube)
 
         // Add the horizontal plane anchor to the scene

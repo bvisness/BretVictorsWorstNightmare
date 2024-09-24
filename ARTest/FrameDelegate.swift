@@ -10,7 +10,7 @@ import RealityKit
 import ARKit
 
 class FrameDelegate : NSObject, ARSessionDelegate {
-    let nframes = 30
+    let nframes = 1
     var counter = 0
     
     let detector = apriltag_detector_create()!
@@ -29,10 +29,10 @@ class FrameDelegate : NSObject, ARSessionDelegate {
     }
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        let screenCenter = CGPoint(x: view.bounds.midX, y: view.bounds.midY)
-        if let result = view.raycast(from: screenCenter, allowing: .estimatedPlane, alignment: .any).first {
-            cubeAnchor.transform.translation = result.worldTransform.translation
-        }
+//        let screenCenter = CGPoint(x: view.bounds.midX, y: view.bounds.midY)
+//        if let result = view.raycast(from: screenCenter, allowing: .estimatedPlane, alignment: .any).first {
+//            cubeAnchor.transform.translation = result.worldTransform.translation
+//        }
         
         counter += 1
         if counter == nframes {
@@ -76,7 +76,7 @@ class FrameDelegate : NSObject, ARSessionDelegate {
             let detections = apriltag_detector_detect(detector, apriltagImg)!
             defer { apriltag_detections_destroy(detections) }
             let n = zarray_size(detections)
-            print("Detected \(n) AprilTags")
+//            print("Detected \(n) AprilTags")
             for i in 0..<zarray_size(detections) {
                 let det = UnsafeMutablePointer<UnsafeMutablePointer<apriltag_detection>>.allocate(capacity: 1)
                 zarray_get(detections, i, det)
@@ -103,9 +103,24 @@ class FrameDelegate : NSObject, ARSessionDelegate {
                 let tz = matd_get(t, r: 2, c: 0)
                 let (rx, ry, rz) = matd_rotation_to_euler2(pose.pointee.R!)
                 
-                print("- Tag id \(det.pointee.pointee.id) at \(det.pointee.pointee.c)")
-                print("  Translation: \(tx), \(ty), \(tz)")
-                print("  Rotation: \(rx.rad2deg), \(ry.rad2deg), \(rz.rad2deg)")
+                // Apple's camera coordinate frame is x right, y up, z out of screen.
+                // AprilTag's camera coordinate frame is x right, y down, z into screen.
+                // Therefore we just need to invert the y and z axes.
+                let applecam2aprilcam = float4x4(columns: (
+                    simd_float4(1, 0, 0, 0),
+                    simd_float4(0, -1, 0, 0),
+                    simd_float4(0, 0, -1, 0),
+                    simd_float4(0, 0, 0, 1)
+                ))
+                var aprilcam2tag = Transform()
+                aprilcam2tag.rotation = matd_rotation_to_quat(pose.pointee.R!)
+                aprilcam2tag.translation = SIMD3<Float>(Float(tx), Float(ty), Float(tz))
+                let world2tag = Transform(matrix: frame.camera.transform * applecam2aprilcam * aprilcam2tag.matrix)
+                cubeAnchor.transform = world2tag
+                
+//                print("- Tag id \(det.pointee.pointee.id) at \(det.pointee.pointee.c)")
+//                print("  Translation: \(tx), \(ty), \(tz)")
+//                print("  Rotation: \(rx.rad2deg), \(ry.rad2deg), \(rz.rad2deg)")
             }
         }
     }
@@ -160,5 +175,46 @@ class FrameDelegate : NSObject, ARSessionDelegate {
             atan2(-r31, sqrt(r32*r32 + r33*r33)),
             atan2(r21, r11)
         )
+    }
+    
+    // This method taken from Mike Day at Insomniac Games.
+    // https://d3cw3dd2w32x2b.cloudfront.net/wp-content/uploads/2015/01/matrix-to-quat.pdf
+    func matd_rotation_to_quat(_ m: UnsafeMutablePointer<matd_t>) -> simd_quatf {
+        var t: Float
+        var q: simd_quatf
+        
+        // The paper assumes row vectors, and therefore expects the matrix to be multiplied
+        // on the right. This is opposite of our convention so we need to transpose the matrix.
+        // We do that implicitly here.
+        let m00 = Float(matd_get(m, r: 0, c: 0))
+        let m01 = Float(matd_get(m, r: 1, c: 0))
+        let m02 = Float(matd_get(m, r: 2, c: 0))
+        let m10 = Float(matd_get(m, r: 0, c: 1))
+        let m11 = Float(matd_get(m, r: 1, c: 1))
+        let m12 = Float(matd_get(m, r: 2, c: 1))
+        let m20 = Float(matd_get(m, r: 0, c: 2))
+        let m21 = Float(matd_get(m, r: 1, c: 2))
+        let m22 = Float(matd_get(m, r: 2, c: 2))
+
+        if m22 < 0 {
+            if m00 > m11 {
+                t = 1 + m00 - m11 - m22
+                q = simd_quatf(vector: vector_float4(t, m01+m10, m20+m02, m12-m21))
+            } else {
+                t = 1 - m00 + m11 - m22
+                q = simd_quatf(vector: vector_float4(m01+m10, t, m12+m21, m20-m02))
+            }
+        } else {
+            if m00 < -m11 {
+                t = 1 - m00 - m11 + m22
+                q = simd_quatf(vector: vector_float4(m20+m02, m12+m21, t, m01-m10))
+            } else {
+                t = 1 + m00 + m11 + m22
+                q = simd_quatf(vector: vector_float4(m12-m21, m20-m02, m01-m10, t))
+            }
+        }
+        q *= 0.5 / sqrt(t)
+        
+        return q
     }
 }
