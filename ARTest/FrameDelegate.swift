@@ -112,7 +112,8 @@ class FrameDelegate : NSObject, ARSessionDelegate {
                 
                 // Apple's camera coordinate frame is x right, y up, z out of screen.
                 // AprilTag's camera coordinate frame is x right, y down, z into screen.
-                // Therefore we just need to invert the y and z axes.
+                // Therefore we just need to invert the y and z axes, apply the estimated
+                // tag transform, then flip back.
                 let applecam2aprilcam = float4x4(columns: (
                     simd_float4(1, 0, 0, 0),
                     simd_float4(0, -1, 0, 0),
@@ -122,7 +123,7 @@ class FrameDelegate : NSObject, ARSessionDelegate {
                 var aprilcam2tag = Transform()
                 aprilcam2tag.rotation = matd_rotation_to_quat(pose.pointee.R!)
                 aprilcam2tag.translation = SIMD3<Float>(Float(tx), Float(ty), Float(tz))
-                let world2tag = Transform(matrix: frame.camera.transform * applecam2aprilcam * aprilcam2tag.matrix)
+                let world2tag = Transform(matrix: frame.camera.transform * applecam2aprilcam * aprilcam2tag.matrix * applecam2aprilcam)
                 cubeAnchor.transform = world2tag
                 
 //                print("- Tag id \(det.pointee.pointee.id) at \(det.pointee.pointee.c)")
