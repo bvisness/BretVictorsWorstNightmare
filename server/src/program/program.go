@@ -2,6 +2,7 @@ package program
 
 import (
 	"fmt"
+	"log"
 
 	_ "embed"
 
@@ -56,17 +57,22 @@ const (
 	TypeString
 )
 
+type Vec3 [3]float64
+
 type Object struct {
 	Type ObjectType `msgpack:"type"`
-	Pos  [3]float64 `msgpack:"pos"`
-	Size [3]float64 `msgpack:"size"`
+	Pos  Vec3       `msgpack:"pos"`
+	Size Vec3       `msgpack:"size"`
 	Text string     `msgpack:"text"` // for ObjectTypeText
+
+	Children []Object `msgpack:"children"`
 }
 
 type ObjectType int
 
 const (
-	ObjectTypeBox ObjectType = iota + 1
+	ObjectTypeAnchor ObjectType = iota
+	ObjectTypeBox
 	ObjectTypeSphere
 	ObjectTypeCylinder
 	ObjectTypeCone
@@ -74,6 +80,8 @@ const (
 )
 
 var objtype2go = map[string]ObjectType{
+	"":         ObjectTypeAnchor,
+	"anchor":   ObjectTypeAnchor,
 	"box":      ObjectTypeBox,
 	"sphere":   ObjectTypeSphere,
 	"cylinder": ObjectTypeCylinder,
@@ -203,10 +211,10 @@ func (i *Instance) Init() error {
 	})
 }
 
-func (i *Instance) RenderScene() ([]Object, error) {
+func (i *Instance) RenderScene() (Object, error) {
 	render := i.L.GetGlobal("ARRenderScene")
 	if render == lua.LNil {
-		return nil, nil
+		return Object{}, nil
 	}
 
 	err := i.L.CallByParam(lua.P{
@@ -215,41 +223,45 @@ func (i *Instance) RenderScene() ([]Object, error) {
 		Protect: true,
 	})
 	if err != nil {
-		return nil, err
+		return Object{}, err
 	}
 
 	ret := i.L.Get(-1)
 	i.L.Pop(1)
 
-	var resultObjects []Object
-	if objects, ok := ret.(*lua.LTable); ok {
-		objects.ForEach(func(_, obj lua.LValue) {
-			if lua.LVIsFalse(obj) {
-				return
-			}
-
-			objType := lua.LVAsString(i.L.GetField(obj, "type"))
-			pos := getVec3(i.L, i.L.GetField(obj, "pos"))
-			size := getVec3(i.L, i.L.GetField(obj, "size"))
-			text := lua.LVAsString(i.L.GetField(obj, "text"))
-			// TODO: Default size to 1 instead of 0 lol
-
-			objTypeGo, ok := objtype2go[objType]
-			if !ok {
-				return
-			}
-
-			resultObjects = append(resultObjects, Object{
-				Type: objTypeGo,
-				Pos:  pos,
-				Size: size,
-				Text: text,
-			})
-		})
+	if object, ok := Lua2Object(i.L, ret); ok {
+		return object, nil
 	} else {
-		return nil, fmt.Errorf("expected table of scene objects, but got %s", ret.Type())
+		return Object{}, nil
 	}
-	return resultObjects, nil
+}
+
+func Lua2Object(L *lua.LState, lobj lua.LValue) (Object, bool) {
+	objType := lua.LVAsString(L.GetField(lobj, "type"))
+	pos := getVec3(L, L.GetField(lobj, "pos"), Vec3{0, 0, 0})
+	size := getVec3(L, L.GetField(lobj, "size"), Vec3{1, 1, 1})
+	text := lua.LVAsString(L.GetField(lobj, "text"))
+
+	objTypeGo, ok := objtype2go[objType]
+	if !ok {
+		log.Printf("WARNING! Unrecognized object type '%s'", objType)
+		return Object{}, false
+	}
+
+	obj := Object{
+		Type: objTypeGo,
+		Pos:  pos,
+		Size: size,
+		Text: text,
+	}
+
+	for i := 1; i <= L.ObjLen(lobj); i++ {
+		lchild := L.GetTable(lobj, lua.LNumber(i))
+		if child, ok := Lua2Object(L, lchild); ok {
+			obj.Children = append(obj.Children, child)
+		}
+	}
+	return obj, true
 }
 
 func Data2Lua(L *lua.LState, d *Data) lua.LValue {
@@ -327,8 +339,11 @@ func Lua2Data(L *lua.LState, v lua.LValue) (Data, error) {
 	return Data{}, fmt.Errorf("cannot convert value of type %s to AR data", v.Type().String())
 }
 
-func getVec3(L *lua.LState, v lua.LValue) [3]float64 {
-	return [3]float64{
+func getVec3(L *lua.LState, v lua.LValue, defaultValue Vec3) Vec3 {
+	if v == lua.LNil {
+		return defaultValue
+	}
+	return Vec3{
 		float64(lua.LVAsNumber(L.GetTable(v, lua.LNumber(1)))),
 		float64(lua.LVAsNumber(L.GetTable(v, lua.LNumber(2)))),
 		float64(lua.LVAsNumber(L.GetTable(v, lua.LNumber(3)))),

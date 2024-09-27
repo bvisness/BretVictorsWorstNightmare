@@ -38,10 +38,10 @@ func main() {
 		for {
 			time.Sleep(time.Second * 1)
 
-			if objects, err := instance.RenderScene(); err == nil {
+			if object, err := instance.RenderScene(); err == nil {
 				out, err := msgpack.Marshal(Message{
-					Type:    MessageTypeScene,
-					Objects: objects,
+					Type:   MessageTypeScene,
+					Object: object,
 				})
 				if err != nil {
 					panic(err)
@@ -64,8 +64,8 @@ func main() {
 }
 
 type Message struct {
-	Type    MessageType      `msgpack:"type"`
-	Objects []program.Object `msgpack:"objects,omitempty"`
+	Type   MessageType    `msgpack:"type"`
+	Object program.Object `msgpack:"object,omitempty"`
 }
 
 type MessageType int

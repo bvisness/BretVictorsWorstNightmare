@@ -17,9 +17,9 @@ func TestInstantiate(t *testing.T) {
 	assert.Nil(t, instance.Init())
 	t.Logf("%#v", instance.Data)
 
-	objects, err := instance.RenderScene()
+	object, err := instance.RenderScene()
 	if assert.Nil(t, err) {
-		assert.True(t, len(objects) > 0)
-		t.Logf("%#v", objects)
+		assert.True(t, len(object.Children) > 0)
+		t.Logf("%#v", object.Children)
 	}
 }
