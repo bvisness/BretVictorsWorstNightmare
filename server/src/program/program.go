@@ -232,6 +232,7 @@ func (i *Instance) RenderScene() ([]Object, error) {
 			pos := getVec3(i.L, i.L.GetField(obj, "pos"))
 			size := getVec3(i.L, i.L.GetField(obj, "size"))
 			text := lua.LVAsString(i.L.GetField(obj, "text"))
+			// TODO: Default size to 1 instead of 0 lol
 
 			objTypeGo, ok := objtype2go[objType]
 			if !ok {

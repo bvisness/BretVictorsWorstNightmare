@@ -28,7 +28,7 @@ class FrameDelegate : NSObject, ARSessionDelegate {
 
         // After finding a good sweet spot, consider moving all the AprilTag
         // detection onto a separate thread.
-        detector.pointee.quad_decimate = 10
+        detector.pointee.quad_decimate = 6
 
         apriltag_detector_add_family(detector, tagFamily)
     }
