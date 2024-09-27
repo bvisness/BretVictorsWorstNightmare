@@ -77,16 +77,18 @@ const (
 	ObjectTypeCylinder
 	ObjectTypeCone
 	ObjectTypeText
+	ObjectTypeTriggerBox
 )
 
 var objtype2go = map[string]ObjectType{
-	"":         ObjectTypeAnchor,
-	"anchor":   ObjectTypeAnchor,
-	"box":      ObjectTypeBox,
-	"sphere":   ObjectTypeSphere,
-	"cylinder": ObjectTypeCylinder,
-	"cone":     ObjectTypeCone,
-	"text":     ObjectTypeText,
+	"":           ObjectTypeAnchor,
+	"anchor":     ObjectTypeAnchor,
+	"box":        ObjectTypeBox,
+	"sphere":     ObjectTypeSphere,
+	"cylinder":   ObjectTypeCylinder,
+	"cone":       ObjectTypeCone,
+	"text":       ObjectTypeText,
+	"triggerbox": ObjectTypeTriggerBox,
 }
 
 func splitMapKey(key any) (KeyType, string, float64, bool) {

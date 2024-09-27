@@ -9,6 +9,7 @@ import SwiftUI
 import ARKit
 import RealityKit
 import MessagePacker
+import Combine
 
 struct NightmareView : View {
     var body: some View {
@@ -26,6 +27,7 @@ struct NightmareViewContainer: UIViewRepresentable {
 
 class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate {
     var frameDelegate: FrameDelegate!
+    var cancellables = Set<AnyCancellable>()
 
     let origin = AnchorEntity(world: simd_float3(0, 0, 0))
     let tagEntity = Entity()
@@ -55,10 +57,34 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         scene.anchors.append(origin)
         origin.addChild(tagEntity)
         origin.addChild(cameraEntity)
+        
+        scene.subscribe(to: SceneEvents.Update.self) { [weak self] event in
+            self?.onUpdate(updateEvent: event)
+        }
+        .store(in: &cancellables)
     }
     
     required init?(coder decoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    func onUpdate(updateEvent: SceneEvents.Update) {
+        let deltaTime = updateEvent.deltaTime
+        
+        let hitEntities = self.raycastCenter()
+    }
+    
+    func raycastCenter() -> [Entity] {
+        let center = CGPoint(x: bounds.midX, y: bounds.midY)
+        if let ray = self.ray(through: center) {
+            let hits = scene.raycast(origin: ray.origin, direction: ray.direction)
+            var hitEntities: [Entity] = []
+            for hit in hits {
+                hitEntities.append(hit.entity)
+            }
+            return hitEntities
+        }
+        return []
     }
     
     func onConnected(connection: any WebSocketConnection) {
@@ -131,6 +157,12 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
             entity.transform.scale = simd_float3(
                 Float(object.size[0]), Float(object.size[1]), Float(object.size[2])
             )
+        case 6: // trigger box
+            entity = TriggerVolume(shape: ShapeResource.generateBox(
+                width: Float(object.size[0]),
+                height: Float(object.size[1]),
+                depth: Float(object.size[2])
+            ))
         default:
             print("unknown object type: \(object.type)")
             return .none
