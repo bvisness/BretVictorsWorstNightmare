@@ -8,6 +8,7 @@
 import SwiftUI
 import ARKit
 import RealityKit
+import MessagePacker
 
 struct ContentView : View {
     var body: some View {
@@ -85,7 +86,21 @@ struct ARViewContainer: UIViewRepresentable, WebSocketConnectionDelegate {
     
     func onMessage(connection: any WebSocketConnection, data: Data) {
         print("WebSocket binary message: \(data)")
+        let msg = try! MessagePackDecoder().decode(Message.self, from: data)
+        print(msg)
     }
+}
+
+struct Message: Codable {
+    var type: Int
+    var objects: [Object]
+}
+
+struct Object: Codable {
+    var type: Int
+    var pos: [Float64]
+    var size: [Float64]
+    var text: String
 }
 
 #Preview {
