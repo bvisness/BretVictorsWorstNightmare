@@ -48,6 +48,9 @@
 		46B0E5822C8147E40028ED77 /* ARTestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46B0E5812C8147E40028ED77 /* ARTestTests.swift */; };
 		46B0E58C2C8147E40028ED77 /* ARTestUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46B0E58B2C8147E40028ED77 /* ARTestUITests.swift */; };
 		46B0E58E2C8147E40028ED77 /* ARTestUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46B0E58D2C8147E40028ED77 /* ARTestUITestsLaunchTests.swift */; };
+		57BABC7A620639C88BA39F5A /* Pods_ARTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1E83711DC42D31A9ED0F34F4 /* Pods_ARTest.framework */; };
+		65A10AAEE56A147FC4DC11D6 /* Pods_ARTest_ARTestUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2B3334D97941ECF406EAC248 /* Pods_ARTest_ARTestUITests.framework */; };
+		9A2835B82345B3490C63DD1D /* Pods_ARTestTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E17A40C3EFD3A197E0E8FF8D /* Pods_ARTestTests.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -80,6 +83,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		02BD42829E66A49C8FDD23D0 /* Pods-ARTest.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ARTest.debug.xcconfig"; path = "Target Support Files/Pods-ARTest/Pods-ARTest.debug.xcconfig"; sourceTree = "<group>"; };
+		0B9BE1A08222702F470EF0FC /* Pods-ARTestTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ARTestTests.release.xcconfig"; path = "Target Support Files/Pods-ARTestTests/Pods-ARTestTests.release.xcconfig"; sourceTree = "<group>"; };
+		1E83711DC42D31A9ED0F34F4 /* Pods_ARTest.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ARTest.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		2B3334D97941ECF406EAC248 /* Pods_ARTest_ARTestUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ARTest_ARTestUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		462C1A452C8CC4FE0012697F /* FrameDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameDelegate.swift; sourceTree = "<group>"; };
 		462C1B672C8CEB400012697F /* libapriltag.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libapriltag.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		462C1B6F2C8CEBF70012697F /* ARTest-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ARTest-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -165,6 +172,11 @@
 		46B0E5872C8147E40028ED77 /* ARTestUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ARTestUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		46B0E58B2C8147E40028ED77 /* ARTestUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARTestUITests.swift; sourceTree = "<group>"; };
 		46B0E58D2C8147E40028ED77 /* ARTestUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARTestUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		6962A9D1998AE4885D106B31 /* Pods-ARTest-ARTestUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ARTest-ARTestUITests.debug.xcconfig"; path = "Target Support Files/Pods-ARTest-ARTestUITests/Pods-ARTest-ARTestUITests.debug.xcconfig"; sourceTree = "<group>"; };
+		85723F5A644457EAA139C897 /* Pods-ARTestTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ARTestTests.debug.xcconfig"; path = "Target Support Files/Pods-ARTestTests/Pods-ARTestTests.debug.xcconfig"; sourceTree = "<group>"; };
+		958A744604FA7AFD5CAAC15D /* Pods-ARTest.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ARTest.release.xcconfig"; path = "Target Support Files/Pods-ARTest/Pods-ARTest.release.xcconfig"; sourceTree = "<group>"; };
+		B19B7F64C3741A0AC651DB04 /* Pods-ARTest-ARTestUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ARTest-ARTestUITests.release.xcconfig"; path = "Target Support Files/Pods-ARTest-ARTestUITests/Pods-ARTest-ARTestUITests.release.xcconfig"; sourceTree = "<group>"; };
+		E17A40C3EFD3A197E0E8FF8D /* Pods_ARTestTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ARTestTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -179,6 +191,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				57BABC7A620639C88BA39F5A /* Pods_ARTest.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -186,6 +199,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9A2835B82345B3490C63DD1D /* Pods_ARTestTests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -193,6 +207,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				65A10AAEE56A147FC4DC11D6 /* Pods_ARTest_ARTestUITests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -293,6 +308,8 @@
 				46B0E5802C8147E40028ED77 /* ARTestTests */,
 				46B0E58A2C8147E40028ED77 /* ARTestUITests */,
 				46B0E56E2C8147E10028ED77 /* Products */,
+				BAD23150D23933A0D6E32A1E /* Pods */,
+				E9F9CDCE02EBC7045E094924 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -346,6 +363,29 @@
 			path = ARTestUITests;
 			sourceTree = "<group>";
 		};
+		BAD23150D23933A0D6E32A1E /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				02BD42829E66A49C8FDD23D0 /* Pods-ARTest.debug.xcconfig */,
+				958A744604FA7AFD5CAAC15D /* Pods-ARTest.release.xcconfig */,
+				6962A9D1998AE4885D106B31 /* Pods-ARTest-ARTestUITests.debug.xcconfig */,
+				B19B7F64C3741A0AC651DB04 /* Pods-ARTest-ARTestUITests.release.xcconfig */,
+				85723F5A644457EAA139C897 /* Pods-ARTestTests.debug.xcconfig */,
+				0B9BE1A08222702F470EF0FC /* Pods-ARTestTests.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		E9F9CDCE02EBC7045E094924 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1E83711DC42D31A9ED0F34F4 /* Pods_ARTest.framework */,
+				2B3334D97941ECF406EAC248 /* Pods_ARTest_ARTestUITests.framework */,
+				E17A40C3EFD3A197E0E8FF8D /* Pods_ARTestTests.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -370,9 +410,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 46B0E5912C8147E40028ED77 /* Build configuration list for PBXNativeTarget "ARTest" */;
 			buildPhases = (
+				710D099B6A49CB1B65C3CDEF /* [CP] Check Pods Manifest.lock */,
 				46B0E5692C8147E10028ED77 /* Sources */,
 				46B0E56A2C8147E10028ED77 /* Frameworks */,
 				46B0E56B2C8147E10028ED77 /* Resources */,
+				D7CD3DE6BAD4EA0E2E244D56 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -387,6 +429,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 46B0E5942C8147E40028ED77 /* Build configuration list for PBXNativeTarget "ARTestTests" */;
 			buildPhases = (
+				BA9FC3F93412B8A3B3C5CE0E /* [CP] Check Pods Manifest.lock */,
 				46B0E5792C8147E40028ED77 /* Sources */,
 				46B0E57A2C8147E40028ED77 /* Frameworks */,
 				46B0E57B2C8147E40028ED77 /* Resources */,
@@ -405,9 +448,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 46B0E5972C8147E40028ED77 /* Build configuration list for PBXNativeTarget "ARTestUITests" */;
 			buildPhases = (
+				6360491F6AE7B250EE4EB850 /* [CP] Check Pods Manifest.lock */,
 				46B0E5832C8147E40028ED77 /* Sources */,
 				46B0E5842C8147E40028ED77 /* Frameworks */,
 				46B0E5852C8147E40028ED77 /* Resources */,
+				A7BF50D3C172ADDEB6C86AEE /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -492,6 +537,109 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		6360491F6AE7B250EE4EB850 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-ARTest-ARTestUITests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		710D099B6A49CB1B65C3CDEF /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-ARTest-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		A7BF50D3C172ADDEB6C86AEE /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ARTest-ARTestUITests/Pods-ARTest-ARTestUITests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ARTest-ARTestUITests/Pods-ARTest-ARTestUITests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ARTest-ARTestUITests/Pods-ARTest-ARTestUITests-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		BA9FC3F93412B8A3B3C5CE0E /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-ARTestTests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		D7CD3DE6BAD4EA0E2E244D56 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ARTest/Pods-ARTest-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ARTest/Pods-ARTest-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ARTest/Pods-ARTest-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		462C1B632C8CEB400012697F /* Sources */ = {
@@ -724,6 +872,7 @@
 		};
 		46B0E5922C8147E40028ED77 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 02BD42829E66A49C8FDD23D0 /* Pods-ARTest.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -733,12 +882,13 @@
 				DEVELOPMENT_ASSET_PATHS = "\"ARTest/Preview Content\"";
 				DEVELOPMENT_TEAM = 6RZWDSPY79;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiredDeviceCapabilities = arkit;
-				INFOPLIST_KEY_UIRequiresFullScreen = NO;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -763,6 +913,7 @@
 		};
 		46B0E5932C8147E40028ED77 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 958A744604FA7AFD5CAAC15D /* Pods-ARTest.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -772,12 +923,13 @@
 				DEVELOPMENT_ASSET_PATHS = "\"ARTest/Preview Content\"";
 				DEVELOPMENT_TEAM = 6RZWDSPY79;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiredDeviceCapabilities = arkit;
-				INFOPLIST_KEY_UIRequiresFullScreen = NO;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -801,6 +953,7 @@
 		};
 		46B0E5952C8147E40028ED77 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 85723F5A644457EAA139C897 /* Pods-ARTestTests.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -820,6 +973,7 @@
 		};
 		46B0E5962C8147E40028ED77 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0B9BE1A08222702F470EF0FC /* Pods-ARTestTests.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -839,6 +993,7 @@
 		};
 		46B0E5982C8147E40028ED77 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 6962A9D1998AE4885D106B31 /* Pods-ARTest-ARTestUITests.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -856,6 +1011,7 @@
 		};
 		46B0E5992C8147E40028ED77 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B19B7F64C3741A0AC651DB04 /* Pods-ARTest-ARTestUITests.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;

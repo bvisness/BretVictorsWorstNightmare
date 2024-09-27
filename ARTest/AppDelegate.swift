@@ -7,6 +7,7 @@
 
 import UIKit
 import SwiftUI
+import MessagePacker
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {

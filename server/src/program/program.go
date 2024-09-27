@@ -3,9 +3,14 @@ package program
 import (
 	"fmt"
 
+	_ "embed"
+
 	"github.com/bvisness/BretVictorsWorstNightmare/server/src/utils"
 	lua "github.com/yuin/gopher-lua"
 )
+
+//go:embed tictactoe.lua
+var TicTacToe string
 
 type Program struct {
 	Name   string
@@ -50,6 +55,31 @@ const (
 	TypeNumber
 	TypeString
 )
+
+type Object struct {
+	Type ObjectType `msgpack:"type"`
+	Pos  [3]float64 `msgpack:"pos"`
+	Size [3]float64 `msgpack:"size"`
+	Text string     `msgpack:"text"` // for ObjectTypeText
+}
+
+type ObjectType int
+
+const (
+	ObjectTypeBox ObjectType = iota + 1
+	ObjectTypeSphere
+	ObjectTypeCylinder
+	ObjectTypeCone
+	ObjectTypeText
+)
+
+var objtype2go = map[string]ObjectType{
+	"box":      ObjectTypeBox,
+	"sphere":   ObjectTypeSphere,
+	"cylinder": ObjectTypeCylinder,
+	"cone":     ObjectTypeCone,
+	"text":     ObjectTypeText,
+}
 
 func splitMapKey(key any) (KeyType, string, float64, bool) {
 	switch k := key.(type) {
@@ -163,14 +193,62 @@ func Instantiate(p *Program) (*Instance, error) {
 
 func (i *Instance) Init() error {
 	init := i.L.GetGlobal("ARInit")
-	if init != lua.LNil {
-		err := i.L.CallByParam(lua.P{
-			Fn:      init,
-			Protect: true,
-		})
-		return err
+	if init == lua.LNil {
+		return nil
 	}
-	return nil
+
+	return i.L.CallByParam(lua.P{
+		Fn:      init,
+		Protect: true,
+	})
+}
+
+func (i *Instance) RenderScene() ([]Object, error) {
+	render := i.L.GetGlobal("ARRenderScene")
+	if render == lua.LNil {
+		return nil, nil
+	}
+
+	err := i.L.CallByParam(lua.P{
+		Fn:      render,
+		NRet:    1,
+		Protect: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ret := i.L.Get(-1)
+	i.L.Pop(1)
+
+	var resultObjects []Object
+	if objects, ok := ret.(*lua.LTable); ok {
+		objects.ForEach(func(_, obj lua.LValue) {
+			if lua.LVIsFalse(obj) {
+				return
+			}
+
+			objType := lua.LVAsString(i.L.GetField(obj, "type"))
+			pos := getVec3(i.L, i.L.GetField(obj, "pos"))
+			size := getVec3(i.L, i.L.GetField(obj, "size"))
+			text := lua.LVAsString(i.L.GetField(obj, "text"))
+
+			objTypeGo, ok := objtype2go[objType]
+			if !ok {
+				return
+			}
+
+			resultObjects = append(resultObjects, Object{
+				Type: objTypeGo,
+				Pos:  pos,
+				Size: size,
+				Text: text,
+			})
+		})
+	} else {
+		return nil, fmt.Errorf("expected table of scene objects, but got %s", ret.Type())
+	}
+	return resultObjects, nil
 }
 
 func Data2Lua(L *lua.LState, d *Data) lua.LValue {
@@ -246,4 +324,12 @@ func Lua2Data(L *lua.LState, v lua.LValue) (Data, error) {
 		return Data{Type: TypeString, StringValue: string(v.(lua.LString))}, nil
 	}
 	return Data{}, fmt.Errorf("cannot convert value of type %s to AR data", v.Type().String())
+}
+
+func getVec3(L *lua.LState, v lua.LValue) [3]float64 {
+	return [3]float64{
+		float64(lua.LVAsNumber(L.GetTable(v, lua.LNumber(1)))),
+		float64(lua.LVAsNumber(L.GetTable(v, lua.LNumber(2)))),
+		float64(lua.LVAsNumber(L.GetTable(v, lua.LNumber(3)))),
+	}
 }

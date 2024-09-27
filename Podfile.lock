@@ -1,0 +1,16 @@
+PODS:
+  - MessagePacker (0.4.7)
+
+DEPENDENCIES:
+  - MessagePacker
+
+SPEC REPOS:
+  trunk:
+    - MessagePacker
+
+SPEC CHECKSUMS:
+  MessagePacker: ab2fe250e86ea7aedd1a9ee47a37083edd41fd02
+
+PODFILE CHECKSUM: 02f1b6e15551ea5ea22f814df2e61df35bca523b
+
+COCOAPODS: 1.15.2
