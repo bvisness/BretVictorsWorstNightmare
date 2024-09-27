@@ -15,11 +15,13 @@ struct ContentView : View {
     }
 }
 
+var conn: WebSocketConnection!
+
 let arView = ARView(frame: .zero)
 var frameDelegate = FrameDelegate(view: arView)
 
 //let cubeAnchor = AnchorEntity(.plane(.horizontal, classification: .any, minimumBounds: SIMD2<Float>(0.2, 0.2)))
-let cubeAnchor = AnchorEntity(world: SIMD3<Float>(0, 0, 0))
+let tagAnchor = AnchorEntity(world: SIMD3<Float>(0, 0, 0))
 let cube = ModelEntity(
 //    mesh: MeshResource.generateBox(size: 0.05, cornerRadius: 0.005),
     mesh: MeshResource.generateText(
@@ -37,24 +39,53 @@ let cursor = ModelEntity(
     materials: [SimpleMaterial(color: .systemBlue, roughness: 0.25, isMetallic: false)]
 )
 
-struct ARViewContainer: UIViewRepresentable {
+struct ARViewContainer: UIViewRepresentable, WebSocketConnectionDelegate {
+    
     func makeUIView(context: Context) -> ARView {
         arView.session.delegate = frameDelegate
 //        arView.renderOptions.insert(.disableMotionBlur)
 
 //        cube.transform.translation.z = 0.025
-        cubeAnchor.children.append(cube)
+        tagAnchor.children.append(cube)
         
         cursor.transform.translation.z = -0.15
         cameraAnchor.children.append(cursor)
 
-        arView.scene.anchors.append(cubeAnchor)
+        arView.scene.anchors.append(tagAnchor)
         arView.scene.anchors.append(cameraAnchor)
+        
+        conn = WebSocketTaskConnection(url: URL(string: "ws://192.168.0.32:8080/")!)
+        conn.delegate = self
+        conn.connect()
 
         return arView
     }
     
     func updateUIView(_ uiView: ARView, context: Context) {}
+    
+    func onConnected(connection: any WebSocketConnection) {
+        print("Connected to WebSocket")
+    }
+    
+    func onDisconnected(connection: any WebSocketConnection, error: (any Error)?) {
+        if let error = error {
+            print("Disconnected from WebSocket with error: \(error)")
+        } else {
+            print("Disconnected from WebSocket normally")
+        }
+    }
+    
+    func onError(connection: any WebSocketConnection, error: any Error) {
+        print("WebSocket connection error: \(error)")
+    }
+    
+    func onMessage(connection: any WebSocketConnection, text: String) {
+        print("WebSocket text message: \(text)")
+    }
+    
+    func onMessage(connection: any WebSocketConnection, data: Data) {
+        print("WebSocket binary message: \(data)")
+    }
 }
 
 #Preview {

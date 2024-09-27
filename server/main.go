@@ -38,7 +38,7 @@ func main() {
 		for {
 			time.Sleep(time.Second * 1)
 
-			if objects, err := instance.RenderScene(); err != nil {
+			if objects, err := instance.RenderScene(); err == nil {
 				out, err := msgpack.Marshal(Message{
 					Type:    MessageTypeScene,
 					Objects: objects,
@@ -46,7 +46,13 @@ func main() {
 				if err != nil {
 					panic(err)
 				}
-				conn.WriteMessage(websocket.BinaryMessage, out)
+				err = conn.WriteMessage(websocket.BinaryMessage, out)
+				if err == nil {
+					log.Println("wote message uwu")
+				} else {
+					log.Printf("ewwow witing message uwu: %v", err)
+					return
+				}
 			} else {
 				log.Printf("WARNING! Failed to render scene: %v", err)
 			}

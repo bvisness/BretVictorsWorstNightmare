@@ -126,7 +126,7 @@ class FrameDelegate : NSObject, ARSessionDelegate {
                 aprilcam2tag.rotation = matd_rotation_to_quat(pose.pointee.R!)
                 aprilcam2tag.translation = SIMD3<Float>(Float(tx), Float(ty), Float(tz))
                 let world2tag = Transform(matrix: frame.camera.transform * applecam2aprilcam * aprilcam2tag.matrix * applecam2aprilcam)
-                cubeAnchor.transform = world2tag
+                tagAnchor.transform = world2tag
                 
 //                print("- Tag id \(det.pointee.pointee.id) at \(det.pointee.pointee.c)")
 //                print("  Translation: \(tx), \(ty), \(tz)")
