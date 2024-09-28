@@ -30,7 +30,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     var cancellables = Set<AnyCancellable>()
 
     let origin = AnchorEntity(world: simd_float3(0, 0, 0))
-    let tagEntities: [Entity] = [Entity(), Entity(), Entity(), Entity(), Entity(), Entity(), Entity(), Entity()]
+    var tagEntities: [Entity] = []
     let cameraEntity = Entity()
     let cursor = ModelEntity(
         mesh: MeshResource.generateSphere(radius: 0.005),
@@ -71,13 +71,24 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         conn.connect()
         
         cursor.transform.translation.z = -0.15
-//        cameraAnchor.children.append(cursor)
+//        cameraEntity.children.append(cursor)
 
         scene.anchors.append(origin)
         for tagEntity in tagEntities {
             origin.addChild(tagEntity)
         }
         origin.addChild(cameraEntity)
+        
+        for i in 0..<16 {
+            let tagEntity = Entity()
+            let tagTrigger = TriggerVolume(
+                shape: .generateBox(size: simd_float3(0.08, 0.08, 0.03))
+            )
+            tagTrigger.name = "__tag\(i)"
+            tagEntity.addChild(tagTrigger)
+            origin.addChild(tagEntity)
+            tagEntities.append(tagEntity)
+        }
         
         scene.subscribe(to: SceneEvents.Update.self) { [weak self] event in
             self?.onUpdate(updateEvent: event)
@@ -102,6 +113,9 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     
     func onUpdate(updateEvent: SceneEvents.Update) {
         let deltaTime = updateEvent.deltaTime
+        if let frame = session.currentFrame {
+            cameraEntity.transform.matrix = frame.camera.transform
+        }
     }
     
     @objc private func handleTap(_ sender: UITapGestureRecognizer) {
@@ -123,12 +137,24 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     }
     
     @objc private func handleSwipe(_ sender: UISwipeGestureRecognizer) {
+        let hitEntities = self.raycastCenter()
+        guard let hit = hitEntities.first else {
+            return
+        }
+        let tag: Int
+        if hit.name.hasPrefix("__tag") {
+            tag = Int(hit.name.substring(from: "__tag".count))!
+        } else {
+            print("Swiped on non-tag object \(hit)")
+            return
+        }
+        
         if sender.direction == .up {
             print("Swipe-Up detected")
             // Handle swipe-up action
         } else if sender.direction == .down {
-            print("Swipe-Down detected")
-            // Handle swipe-down action
+            // TODO: Copy app
+            print("Swiped down on tag \(tag)")
         }
     }
     
@@ -212,9 +238,8 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
                         instance.root.addChild(rendered)
                     }
                     
-                    let (tagVisual, tagTrigger) = self.renderTag(program: instance.program)
+                    let tagVisual = self.renderTag(program: instance.program)
                     instance.root.addChild(tagVisual)
-                    instance.root.addChild(tagTrigger)
                 }
             }
         case 2: // instances
@@ -316,7 +341,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         return entity
     }
     
-    func renderTag(program: String) -> (Entity, Entity) {
+    func renderTag(program: String) -> Entity {
         let tagVisual = Entity()
         
         let tagCover = ModelEntity(
@@ -338,12 +363,8 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         tagProgram.transform.translation.z = 0.005
         tagVisual.addChild(tagCover)
         tagVisual.addChild(tagProgram)
-
-        let tagTrigger = TriggerVolume(
-            shape: .generateBox(size: simd_float3(0.08, 0.08, 0.01))
-        )
         
-        return (tagVisual, tagTrigger)
+        return tagVisual
     }
     
     func renderText(
