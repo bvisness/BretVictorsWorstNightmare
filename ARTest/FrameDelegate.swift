@@ -12,11 +12,18 @@ import RealityKit
 import Vision
 
 protocol NightmareTrackingDelegate: AnyObject {
-    func detectedTags(tags: [Transform])
+    func detectedTags(tags: [TagDetection])
+}
+
+struct TagDetection {
+    let id: Int
+    let pose: Transform
 }
 
 class FrameDelegate : NSObject, ARSessionDelegate {
     weak var delegate: NightmareTrackingDelegate?
+    
+    static let tagSize = 0.0318
 
     let apriltagNFrames = 5
     let qrNFrames = 30
@@ -92,7 +99,7 @@ class FrameDelegate : NSObject, ARSessionDelegate {
             defer { apriltag_detections_destroy(detections) }
             let n = zarray_size(detections)
 //            print("Detected \(n) AprilTags")
-            var tagTransforms = [Transform]()
+            var tagDetections: [TagDetection] = []
             for i in 0..<zarray_size(detections) {
                 let det = UnsafeMutablePointer<UnsafeMutablePointer<apriltag_detection>>.allocate(capacity: 1)
                 zarray_get(detections, i, det)
@@ -101,7 +108,7 @@ class FrameDelegate : NSObject, ARSessionDelegate {
                 let detinfo = UnsafeMutablePointer<apriltag_detection_info_t>.allocate(capacity: 1)
                 detinfo.initialize(to: apriltag_detection_info_t(
                     det: det.pointee,
-                    tagsize: 0.038,
+                    tagsize: FrameDelegate.tagSize,
                     fx: Double(frame.camera.intrinsics[0][0]), fy: Double(frame.camera.intrinsics[1][1]),
                     cx: Double(frame.camera.intrinsics[2][0]), cy: Double(frame.camera.intrinsics[2][1])
                 ))
@@ -133,14 +140,14 @@ class FrameDelegate : NSObject, ARSessionDelegate {
                 aprilcam2tag.rotation = matd_rotation_to_quat(pose.pointee.R!)
                 aprilcam2tag.translation = SIMD3<Float>(Float(tx), Float(ty), Float(tz))
                 let world2tag = Transform(matrix: frame.camera.transform * applecam2aprilcam * aprilcam2tag.matrix * applecam2aprilcam)
-                tagTransforms.append(world2tag)
+                tagDetections.append(TagDetection(id: Int(det.pointee.pointee.id), pose: world2tag))
                 
 //                print("- Tag id \(det.pointee.pointee.id) at \(det.pointee.pointee.c)")
 //                print("  Translation: \(tx), \(ty), \(tz)")
 //                print("  Rotation: \(rx.rad2deg), \(ry.rad2deg), \(rz.rad2deg)")
             }
             
-            delegate?.detectedTags(tags: tagTransforms)
+            delegate?.detectedTags(tags: tagDetections)
         }
         
         if qrCounter >= qrNFrames {

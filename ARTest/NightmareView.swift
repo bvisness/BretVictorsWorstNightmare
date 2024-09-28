@@ -30,17 +30,25 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     var cancellables = Set<AnyCancellable>()
 
     let origin = AnchorEntity(world: simd_float3(0, 0, 0))
-    let tagEntity = Entity()
+    let tagEntities: [Entity] = [Entity(), Entity(), Entity(), Entity(), Entity(), Entity(), Entity(), Entity()]
     let cameraEntity = Entity()
     let cursor = ModelEntity(
         mesh: MeshResource.generateSphere(radius: 0.005),
         materials: [SimpleMaterial(color: .systemBlue, roughness: 0.25, isMetallic: false)]
     )
     
-    var entityIDs: [Entity: String] = [:]
-
+    class Instance {
+        let id: Int
+        let root: Entity = Entity()
+        var sceneHash: Int = 0
+        
+        init(id: Int) {
+            self.id = id
+        }
+    }
+    var instances: [Int: Instance] = [:]
+    
     var conn: WebSocketConnection!
-    var dataHash: Int = 0
     
     required init(frame frameRect: CGRect) {
         super.init(frame: frameRect)
@@ -58,7 +66,9 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
 //        cameraAnchor.children.append(cursor)
 
         scene.anchors.append(origin)
-        origin.addChild(tagEntity)
+        for tagEntity in tagEntities {
+            origin.addChild(tagEntity)
+        }
         origin.addChild(cameraEntity)
         
         scene.subscribe(to: SceneEvents.Update.self) { [weak self] event in
@@ -68,6 +78,14 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         self.addGestureRecognizer(tapGesture)
+        
+        let swipeUpGesture = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipe(_:)))
+        swipeUpGesture.direction = .up
+        self.addGestureRecognizer(swipeUpGesture)
+
+        let swipeDownGesture = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipe(_:)))
+        swipeDownGesture.direction = .down
+        self.addGestureRecognizer(swipeDownGesture)
     }
     
     required init?(coder decoder: NSCoder) {
@@ -82,12 +100,27 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         let tapLocation = sender.location(in: self)
 
         let hitEntities = self.raycastCenter()
-        if let hit = hitEntities.first {
-            if let id = entityIDs[hit] {
-                let message = ClientMessage(type: .tap, id: id)
-                let data = try! MessagePackEncoder().encode(message)
-                conn.send(data: data)
-            }
+        guard let hit = hitEntities.first else {
+            return
+        }
+        guard let instance = entity2instance(hit) else {
+            return
+        }
+        
+        if !hit.name.isEmpty {
+            let message = ClientMessage(type: .tap, instance: instance.id, entityid: hit.name)
+            let data = try! MessagePackEncoder().encode(message)
+            conn.send(data: data)
+        }
+    }
+    
+    @objc private func handleSwipe(_ sender: UISwipeGestureRecognizer) {
+        if sender.direction == .up {
+            print("Swipe-Up detected")
+            // Handle swipe-up action
+        } else if sender.direction == .down {
+            print("Swipe-Down detected")
+            // Handle swipe-down action
         }
     }
     
@@ -102,6 +135,26 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
             return hitEntities
         }
         return []
+    }
+    
+    func entity2instance(_ entity: Entity) -> Instance? {
+        for instance in instances.values {
+            if isChildOf(entity: entity, parent: instance.root) {
+                return instance
+            }
+        }
+        return .none
+    }
+    
+    func isChildOf(entity: Entity, parent: Entity) -> Bool {
+        var test: Entity? = entity
+        while let e = test {
+            if test == parent {
+                return true
+            }
+            test = e.parent
+        }
+        return false
     }
     
     func onConnected(connection: any WebSocketConnection) {
@@ -128,31 +181,71 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
 //        print("WebSocket binary message: \(data)")
         let msg = try! MessagePackDecoder().decode(ServerMessage.self, from: data)
 //        print(msg)
-        let hash = data.hashValue
-        defer { dataHash = hash }
         
-        if hash != dataHash {
-            DispatchQueue.main.async {
-                // Reset the scene
-                for child in self.tagEntity.children {
-                    child.removeFromParent()
-                }
-                self.entityIDs = [:]
-                
-                // Render the scene
-                if let rendered = self.renderEntity(object: msg.object) {
-                    self.tagEntity.addChild(rendered)
+        switch msg.type {
+        case 1: // scenes
+            let instance: Instance
+            if let i = instances[msg.scene.instance] {
+                instance = i
+            } else {
+                instance = Instance(id: msg.scene.instance)
+                instances[instance.id] = instance
+            }
+            
+            let hash = data.hashValue
+            defer { instance.sceneHash = hash }
+            
+            if hash != instance.sceneHash {
+                DispatchQueue.main.async {
+                    // Reset the scene
+                    for child in instance.root.children {
+                        child.removeFromParent()
+                    }
+                    
+                    // Render the scene
+                    if let rendered = self.renderEntity(object: msg.scene.scene) {
+                        instance.root.addChild(rendered)
+                    }
+                    
+                    let tagVisual = ModelEntity(
+                        mesh: .generateBox(
+                            size: simd_float3(Float(FrameDelegate.tagSize), Float(FrameDelegate.tagSize), 0.01),
+                            cornerRadius: 0.0025
+                        ),
+                        materials: [SimpleMaterial(color: .systemBlue, roughness: 0.25, isMetallic: true)]
+                    )
+                    let tagTrigger = TriggerVolume(
+                        shape: .generateBox(size: simd_float3(0.08, 0.08, 0.01))
+                    )
+                    instance.root.addChild(tagVisual)
+                    instance.root.addChild(tagTrigger)
                 }
             }
+        case 2: // tag instances
+            guard let taginstances = msg.taginstances else { break }
+            for ti in taginstances {
+                guard let instance = instances[ti.instance] else {
+                    print("WARNING! Instance \(ti.instance) not found for tag \(ti.tag) despite being active.")
+                    continue
+                }
+                let tagEntity = tagEntities[ti.tag]
+                if !isChildOf(entity: instance.root, parent: tagEntity) {
+                    instance.root.removeFromParent()
+                    tagEntity.addChild(instance.root)
+                }
+            }
+        default:
+            print("Ignoring server message of type \(msg.type)")
         }
     }
     
-    func detectedTags(tags: [Transform]) {
-        if tags.isEmpty {
-            return
+    func detectedTags(tags: [TagDetection]) {
+        for tag in tags {
+            if tag.id > tagEntities.count {
+                break
+            }
+            tagEntities[tag.id].transform = tag.pose
         }
-        
-        tagEntity.transform = tags.first!
     }
     
     func renderEntity(object: Object) -> Entity? {
@@ -207,7 +300,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         )
         
         if object.id != "" {
-            entityIDs[entity] = object.id
+            entity.name = object.id
         }
         
         for child in object.children ?? [] {
@@ -222,12 +315,24 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
 
 struct ServerMessage: Codable {
     var type: Int
-    var object: Object
+    var scene: SceneUpdate
+    var taginstances: [TagInstance]?
+}
+
+struct SceneUpdate: Codable {
+    var instance: Int
+    var scene: Object
+}
+
+struct TagInstance: Codable {
+    var tag: Int
+    var instance: Int
 }
 
 struct ClientMessage: Codable {
     var type: ClientMessage.MessageType
-    var id: String
+    var instance: Int
+    var entityid: String
     
     enum MessageType: Int, Codable {
         case tap = 1
