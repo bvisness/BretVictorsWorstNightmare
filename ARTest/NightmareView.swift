@@ -40,7 +40,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     var entityIDs: [Entity: String] = [:]
 
     var conn: WebSocketConnection!
-    var initializedScene = false
+    var dataHash: Int = 0
     
     required init(frame frameRect: CGRect) {
         super.init(frame: frameRect)
@@ -79,7 +79,6 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     }
     
     @objc private func handleTap(_ sender: UITapGestureRecognizer) {
-        // 1. Get the location of the tap on the screen
         let tapLocation = sender.location(in: self)
 
         let hitEntities = self.raycastCenter()
@@ -129,12 +128,21 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
 //        print("WebSocket binary message: \(data)")
         let msg = try! MessagePackDecoder().decode(ServerMessage.self, from: data)
 //        print(msg)
-        if !initializedScene {
+        let hash = data.hashValue
+        defer { dataHash = hash }
+        
+        if hash != dataHash {
             DispatchQueue.main.async {
+                // Reset the scene
+                for child in self.tagEntity.children {
+                    child.removeFromParent()
+                }
+                self.entityIDs = [:]
+                
+                // Render the scene
                 if let rendered = self.renderEntity(object: msg.object) {
                     self.tagEntity.addChild(rendered)
                 }
-                self.initializedScene = true
             }
         }
     }

@@ -28,8 +28,54 @@ function ARRenderScene()
     pprint("board is now", ar.getdata().board)
   end
 
+  data = ar.getdata()
   -- pprint(data)
   -- pprint(data.board)
+
+  -- Check for winner
+  local tracks = {
+    {1, 2, 3},
+    {4, 5, 6},
+    {7, 8, 9},
+    {1, 4, 7},
+    {2, 5, 8},
+    {3, 6, 9},
+    {1, 5, 9},
+    {7, 5, 3},
+  }
+  local winner = nil
+  for _, track in ipairs(tracks) do
+    local c1 = data.board[track[1]]
+    local c2 = data.board[track[2]]
+    local c3 = data.board[track[3]]
+    if c1 == "x" and c2 == "x" and c3 == "x" then
+      winner = "x"
+      break
+    elseif c1 == "o" and c2 == "o" and c3 == "o" then
+      winner = "o"
+      break
+    end
+  end
+
+  -- Check for draw
+  local draw = true
+  for i = 1, 9 do
+    if data.board[i] == "" then
+      draw = false
+    end
+  end
+
+  local msg = "???"
+  if draw then
+    msg = "It's a draw!"
+  elseif winner then
+    msg = winner.." wins!"
+  elseif data.turn == "x" then
+    msg = "x's turn"
+  elseif data.turn == "o" then
+    msg = "o's turn"
+  end
+
   local cells = {}
   for i, y in ipairs({ 1, 0, -1 }) do
     for j, x in ipairs({ -1, 0, 1 }) do
@@ -43,12 +89,13 @@ function ARRenderScene()
   end
 
   return {
-    { pos = { 0, 0.5, 0 },
+    { pos = { 0, 0.6, 0 },
       { type = "box", pos = { -0.12, 0, 0 }, size = { 0.02, 0.72, 0.01 } },
       { type = "box", pos = { 0.12, 0, 0 }, size = { 0.02, 0.72, 0.01 } },
       { type = "box", pos = { 0, -0.12, 0 }, size = { 0.72, 0.02, 0.01 } },
       { type = "box", pos = { 0, 0.12, 0 }, size = { 0.72, 0.02, 0.01 } },
       cells,
+      { type = "text", text = msg, pos = { -0.36, -0.50, 0 }, size = 0.10 }
     }
   }
 end
