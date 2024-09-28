@@ -46,8 +46,9 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         frameDelegate = FrameDelegate(view: self)
         frameDelegate.delegate = self
         session.delegate = frameDelegate
+        renderOptions.insert(.disableMotionBlur)
 
-        conn = WebSocketTaskConnection(url: URL(string: "wss://d1dc-96-72-40-158.ngrok-free.app/")!)
+        conn = WebSocketTaskConnection(url: URL(string: "ws://192.168.0.32:8080/")!)
         conn.delegate = self
         conn.connect()
         
@@ -72,6 +73,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         let deltaTime = updateEvent.deltaTime
         
         let hitEntities = self.raycastCenter()
+        print("hit: \(hitEntities)")
     }
     
     func raycastCenter() -> [Entity] {
@@ -157,6 +159,15 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
             entity.transform.scale = simd_float3(
                 Float(object.size[0]), Float(object.size[1]), Float(object.size[2])
             )
+        case 5:
+            entity = ModelEntity(
+                mesh: MeshResource.generateText(
+                    object.text,
+                    extrusionDepth: 0.01,
+                    font: .systemFont(ofSize: object.size[0])
+                ),
+                materials: [material]
+            )
         case 6: // trigger box
             entity = TriggerVolume(shape: ShapeResource.generateBox(
                 width: Float(object.size[0]),
@@ -188,6 +199,7 @@ struct Message: Codable {
 
 struct Object: Codable {
     var type: Int
+    var id: String
     var pos: [Float64]
     var size: [Float64]
     var text: String

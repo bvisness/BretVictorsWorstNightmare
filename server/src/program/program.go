@@ -13,6 +13,9 @@ import (
 //go:embed tictactoe.lua
 var TicTacToe string
 
+//go:embed pprint.lua
+var PPrint string
+
 type Program struct {
 	Name   string
 	Source string
@@ -61,6 +64,7 @@ type Vec3 [3]float64
 
 type Object struct {
 	Type ObjectType `msgpack:"type"`
+	ID   string     `msgpack:"id"`
 	Pos  Vec3       `msgpack:"pos"`
 	Size Vec3       `msgpack:"size"`
 	Text string     `msgpack:"text"` // for ObjectTypeText
@@ -151,6 +155,11 @@ func Instantiate(p *Program) (*Instance, error) {
 		Program: p,
 	}
 
+	err := L.DoString(PPrint)
+	if err != nil {
+		return nil, fmt.Errorf("failed to include pprint: %w", err)
+	}
+
 	ar := L.NewTable()
 	L.SetGlobal("ar", ar)
 	L.SetFuncs(ar, map[string]lua.LGFunction{
@@ -191,9 +200,12 @@ func Instantiate(p *Program) (*Instance, error) {
 			*data = ldata
 			return 0
 		},
+		"gettapped": func(l *lua.LState) int {
+			return 0
+		},
 	})
 
-	err := L.DoString(p.Source)
+	err = L.DoString(p.Source)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run Lua source: %w", err)
 	}
@@ -240,6 +252,7 @@ func (i *Instance) RenderScene() (Object, error) {
 
 func Lua2Object(L *lua.LState, lobj lua.LValue) (Object, bool) {
 	objType := lua.LVAsString(L.GetField(lobj, "type"))
+	id := lua.LVAsString(L.GetField(lobj, "id"))
 	pos := getVec3(L, L.GetField(lobj, "pos"), Vec3{0, 0, 0})
 	size := getVec3(L, L.GetField(lobj, "size"), Vec3{1, 1, 1})
 	text := lua.LVAsString(L.GetField(lobj, "text"))
@@ -252,6 +265,7 @@ func Lua2Object(L *lua.LState, lobj lua.LValue) (Object, bool) {
 
 	obj := Object{
 		Type: objTypeGo,
+		ID:   id,
 		Pos:  pos,
 		Size: size,
 		Text: text,
@@ -344,6 +358,10 @@ func Lua2Data(L *lua.LState, v lua.LValue) (Data, error) {
 func getVec3(L *lua.LState, v lua.LValue, defaultValue Vec3) Vec3 {
 	if v == lua.LNil {
 		return defaultValue
+	}
+	if v.Type() == lua.LTNumber {
+		n := float64(lua.LVAsNumber(v))
+		return Vec3{n, n, n}
 	}
 	return Vec3{
 		float64(lua.LVAsNumber(L.GetTable(v, lua.LNumber(1)))),

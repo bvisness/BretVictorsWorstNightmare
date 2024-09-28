@@ -22,6 +22,10 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	err = instance.Init()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func main() {
