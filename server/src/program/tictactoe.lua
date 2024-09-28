@@ -2,9 +2,9 @@
 
 function ARInit()
   ar.setdata("board", {
-    "x", "", "x",
-    "", "o", "",
-    "x", "", "x",
+    "", "", "",
+    "", "", "",
+    "", "", "",
   })
   ar.setdata("turn", "x")
 end
@@ -14,8 +14,10 @@ function ARRenderScene()
   local tapped = ar.gettapped()
 
   if tapped then
+    ar.cleartap()
     local idx = tonumber(tapped:sub(-1))
-    if data.board[idx] ~= "" then
+    if data.board[idx] == "" then
+      print("filling cell", idx, "with", data.turn)
       ar.setdata("board", idx, data.turn)
       if data.turn == "x" then
         ar.setdata("turn", "o")
@@ -23,12 +25,13 @@ function ARRenderScene()
         ar.setdata("turn", "x")
       end
     end
+    pprint("board is now", ar.getdata().board)
   end
 
-  pprint(data)
-  pprint(data.board)
+  -- pprint(data)
+  -- pprint(data.board)
   local cells = {}
-  for i, y in ipairs({ -1, 0, 1 }) do
+  for i, y in ipairs({ 1, 0, -1 }) do
     for j, x in ipairs({ -1, 0, 1 }) do
       local idx = (i-1) * 3 + j
       table.insert(cells, { type = "triggerbox", id = "cell"..idx, pos = { x * 0.24, y * 0.24, 0 }, size = { 0.24, 0.24, 0.01 } })

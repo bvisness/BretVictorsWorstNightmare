@@ -36,6 +36,8 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         mesh: MeshResource.generateSphere(radius: 0.005),
         materials: [SimpleMaterial(color: .systemBlue, roughness: 0.25, isMetallic: false)]
     )
+    
+    var entityIDs: [Entity: String] = [:]
 
     var conn: WebSocketConnection!
     var initializedScene = false
@@ -63,6 +65,9 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
             self?.onUpdate(updateEvent: event)
         }
         .store(in: &cancellables)
+        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+        self.addGestureRecognizer(tapGesture)
     }
     
     required init?(coder decoder: NSCoder) {
@@ -71,9 +76,20 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     
     func onUpdate(updateEvent: SceneEvents.Update) {
         let deltaTime = updateEvent.deltaTime
-        
+    }
+    
+    @objc private func handleTap(_ sender: UITapGestureRecognizer) {
+        // 1. Get the location of the tap on the screen
+        let tapLocation = sender.location(in: self)
+
         let hitEntities = self.raycastCenter()
-        print("hit: \(hitEntities)")
+        if let hit = hitEntities.first {
+            if let id = entityIDs[hit] {
+                let message = ClientMessage(type: .tap, id: id)
+                let data = try! MessagePackEncoder().encode(message)
+                conn.send(data: data)
+            }
+        }
     }
     
     func raycastCenter() -> [Entity] {
@@ -110,9 +126,9 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     }
     
     func onMessage(connection: any WebSocketConnection, data: Data) {
-        print("WebSocket binary message: \(data)")
-        let msg = try! MessagePackDecoder().decode(Message.self, from: data)
-        print(msg)
+//        print("WebSocket binary message: \(data)")
+        let msg = try! MessagePackDecoder().decode(ServerMessage.self, from: data)
+//        print(msg)
         if !initializedScene {
             DispatchQueue.main.async {
                 if let rendered = self.renderEntity(object: msg.object) {
@@ -182,6 +198,10 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
             Float(object.pos[0]), Float(object.pos[1]), Float(object.pos[2])
         )
         
+        if object.id != "" {
+            entityIDs[entity] = object.id
+        }
+        
         for child in object.children ?? [] {
             if let childEntity = renderEntity(object: child) {
                 entity.addChild(childEntity)
@@ -192,9 +212,19 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     }
 }
 
-struct Message: Codable {
+struct ServerMessage: Codable {
     var type: Int
     var object: Object
+}
+
+struct ClientMessage: Codable {
+    var type: ClientMessage.MessageType
+    var id: String
+    
+    enum MessageType: Int, Codable {
+        case tap = 1
+        case hover = 2
+    }
 }
 
 struct Object: Codable {

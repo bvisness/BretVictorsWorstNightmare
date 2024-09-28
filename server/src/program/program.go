@@ -22,8 +22,9 @@ type Program struct {
 }
 
 type Instance struct {
-	L    *lua.LState
-	Data Data // will be of type TypeTable
+	L      *lua.LState
+	Data   Data // will be of type TypeTable
+	Tapped string
 
 	Program *Program
 }
@@ -200,7 +201,16 @@ func Instantiate(p *Program) (*Instance, error) {
 			*data = ldata
 			return 0
 		},
-		"gettapped": func(l *lua.LState) int {
+		"gettapped": func(L *lua.LState) int {
+			if i.Tapped != "" {
+				L.Push(lua.LString(i.Tapped))
+			} else {
+				L.Push(lua.LNil)
+			}
+			return 1
+		},
+		"cleartap": func(L *lua.LState) int {
+			i.Tapped = ""
 			return 0
 		},
 	})
@@ -248,6 +258,10 @@ func (i *Instance) RenderScene() (Object, error) {
 	} else {
 		return Object{}, nil
 	}
+}
+
+func (i *Instance) Tap(id string) {
+	i.Tapped = id
 }
 
 func Lua2Object(L *lua.LState, lobj lua.LValue) (Object, bool) {
