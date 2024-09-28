@@ -91,21 +91,46 @@ func main() {
 
 		// Server message send loop
 		for range time.NewTicker(time.Millisecond * 100).C {
-			var tagInstances []TagInstance
-			for tagID, instanceID := range tag2instance {
-				tagInstances = append(tagInstances, TagInstance{tagID, instanceID})
+			var instanceUpdates []InstanceUpdate
+			var activeInstances []InstanceID
+			for id, instance := range instances {
+				// Generate instance updates and track which instances are active
+				update := InstanceUpdate{
+					Instance: InstanceID(id),
+					Program:  instance.Program.Name,
+				}
+				for tag, otherID := range tag2instance {
+					if InstanceID(id) == otherID {
+						t := &tag
+						update.Tag = t
+						activeInstances = append(activeInstances, InstanceID(id))
+					}
+				}
+				instanceUpdates = append(instanceUpdates, update)
 			}
 
-			for _, tagInstance := range tagInstances {
-				if len(renderedScenes) <= int(tagInstance.Instance) {
-					log.Printf("INTERESTING! Race condition meant that active instance %d did not have a rendered scene.", tagInstance.Instance)
+			// Inform the client of all instances
+			out := utils.Must1(msgpack.Marshal(ServerMessage{
+				Type:      MessageTypeInstances,
+				Instances: instanceUpdates,
+			}))
+			err = conn.WriteMessage(websocket.BinaryMessage, out)
+			if err != nil {
+				log.Printf("failed to send tag instances to client: %v", err)
+				return
+			}
+
+			// Send renders of active instances
+			for _, instanceID := range activeInstances {
+				if len(renderedScenes) <= int(instanceID) {
+					log.Printf("INTERESTING! Race condition meant that active instance %d did not have a rendered scene.", instanceID)
 					continue
 				}
 				out := utils.Must1(msgpack.Marshal(ServerMessage{
 					Type: MessageTypeScene,
 					Scene: SceneUpdate{
-						Instance: tagInstance.Instance,
-						Scene:    renderedScenes[tagInstance.Instance],
+						Instance: instanceID,
+						Scene:    renderedScenes[instanceID],
 					},
 				}))
 				err = conn.WriteMessage(websocket.BinaryMessage, out)
@@ -113,16 +138,6 @@ func main() {
 					log.Printf("failed to send scene to client: %v", err)
 					return
 				}
-			}
-
-			out := utils.Must1(msgpack.Marshal(ServerMessage{
-				Type:         MessageTypeTagInstances,
-				TagInstances: tagInstances,
-			}))
-			err = conn.WriteMessage(websocket.BinaryMessage, out)
-			if err != nil {
-				log.Printf("failed to send tag instances to client: %v", err)
-				return
 			}
 		}
 	})
@@ -152,9 +167,9 @@ func runPrograms() {
 }
 
 type ServerMessage struct {
-	Type         ServerMessageType `msgpack:"type"`
-	Scene        SceneUpdate       `msgpack:"scene"`
-	TagInstances []TagInstance     `msgpack:"taginstances"`
+	Type      ServerMessageType `msgpack:"type"`
+	Scene     SceneUpdate       `msgpack:"scene"`
+	Instances []InstanceUpdate  `msgpack:"instances"`
 }
 
 type SceneUpdate struct {
@@ -162,9 +177,10 @@ type SceneUpdate struct {
 	Scene    program.Object `msgpack:"scene"`
 }
 
-type TagInstance struct {
-	Tag      int        `msgpack:"tag"`
+type InstanceUpdate struct {
 	Instance InstanceID `msgpack:"instance"`
+	Program  string     `msgpack:"program"`
+	Tag      *int       `msgpack:"tag,omitempty"`
 }
 
 type ClientMessage struct {
@@ -178,7 +194,7 @@ type ClientMessageType int
 
 const (
 	MessageTypeScene ServerMessageType = iota + 1
-	MessageTypeTagInstances
+	MessageTypeInstances
 )
 
 const (

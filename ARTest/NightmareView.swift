@@ -36,14 +36,22 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         mesh: MeshResource.generateSphere(radius: 0.005),
         materials: [SimpleMaterial(color: .systemBlue, roughness: 0.25, isMetallic: false)]
     )
+    lazy var tagCoverMaterial = {
+        var mat = PhysicallyBasedMaterial()
+        mat.baseColor = PhysicallyBasedMaterial.BaseColor(tint: .white)
+        mat.blending = .transparent(opacity: 0.75)
+        return mat
+    }()
     
     class Instance {
         let id: Int
+        let program: String
         let root: Entity = Entity()
         var sceneHash: Int = 0
         
-        init(id: Int) {
+        init(id: Int, program: String) {
             self.id = id
+            self.program = program
         }
     }
     var instances: [Int: Instance] = [:]
@@ -184,12 +192,9 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         
         switch msg.type {
         case 1: // scenes
-            let instance: Instance
-            if let i = instances[msg.scene.instance] {
-                instance = i
-            } else {
-                instance = Instance(id: msg.scene.instance)
-                instances[instance.id] = instance
+            guard let instance = instances[msg.scene.instance] else {
+                print("ERROR: Couldn't find instance with id \(msg.scene.instance); this should not happen because the server should have already informed us of all instances before sending us rendered scenes.")
+                break
             }
             
             let hash = data.hashValue
@@ -207,31 +212,30 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
                         instance.root.addChild(rendered)
                     }
                     
-                    let tagVisual = ModelEntity(
-                        mesh: .generateBox(
-                            size: simd_float3(Float(FrameDelegate.tagSize), Float(FrameDelegate.tagSize), 0.01),
-                            cornerRadius: 0.0025
-                        ),
-                        materials: [SimpleMaterial(color: .systemBlue, roughness: 0.25, isMetallic: true)]
-                    )
-                    let tagTrigger = TriggerVolume(
-                        shape: .generateBox(size: simd_float3(0.08, 0.08, 0.01))
-                    )
+                    let (tagVisual, tagTrigger) = self.renderTag(program: instance.program)
                     instance.root.addChild(tagVisual)
                     instance.root.addChild(tagTrigger)
                 }
             }
-        case 2: // tag instances
-            guard let taginstances = msg.taginstances else { break }
-            for ti in taginstances {
-                guard let instance = instances[ti.instance] else {
-                    print("WARNING! Instance \(ti.instance) not found for tag \(ti.tag) despite being active.")
-                    continue
+        case 2: // instances
+            guard let instanceUpdates = msg.instances else { break }
+            for update in instanceUpdates {
+                let instance: Instance
+                if let i = instances[update.instance] {
+                    instance = i
+                } else {
+                    instance = Instance(id: update.instance, program: update.program)
+                    instances[instance.id] = instance
                 }
-                let tagEntity = tagEntities[ti.tag]
-                if !isChildOf(entity: instance.root, parent: tagEntity) {
+
+                if let tag = update.tag {
+                    let tagEntity = tagEntities[tag]
+                    if !isChildOf(entity: instance.root, parent: tagEntity) {
+                        instance.root.removeFromParent()
+                        tagEntity.addChild(instance.root)
+                    }
+                } else { // Not associated with a tag; remove from scene
                     instance.root.removeFromParent()
-                    tagEntity.addChild(instance.root)
                 }
             }
         default:
@@ -311,12 +315,72 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         
         return entity
     }
+    
+    func renderTag(program: String) -> (Entity, Entity) {
+        let tagVisual = Entity()
+        
+        let tagCover = ModelEntity(
+            mesh: .generateBox(
+                size: simd_float3(Float(FrameDelegate.tagOuterSize), Float(FrameDelegate.tagOuterSize), 0.005),
+                cornerRadius: 0.0002
+            ),
+            materials: [tagCoverMaterial]
+        )
+        tagCover.transform.translation.z = 0.0025
+        let tagProgram = renderText(
+            program,
+            materials: [SimpleMaterial(color: .black, roughness: 0.25, isMetallic: false)],
+            font: .systemFont(ofSize: 0.01),
+            frame: CGPoint(x: FrameDelegate.tagOuterSize, y: FrameDelegate.tagOuterSize),
+            alignment: .center,
+            lineBreakMode: .byWordWrapping
+        )
+        tagProgram.transform.translation.z = 0.005
+        tagVisual.addChild(tagCover)
+        tagVisual.addChild(tagProgram)
+
+        let tagTrigger = TriggerVolume(
+            shape: .generateBox(size: simd_float3(0.08, 0.08, 0.01))
+        )
+        
+        return (tagVisual, tagTrigger)
+    }
+    
+    func renderText(
+        _ str: String,
+        materials: [any RealityFoundation.Material],
+        font: MeshResource.Font = .systemFont(ofSize: MeshResource.Font.systemFontSize),
+        frame: CGPoint = CGPoint.zero,
+        alignment: CTTextAlignment = .left,
+        lineBreakMode: CTLineBreakMode = .byTruncatingTail
+    ) -> Entity {
+        let mesh = MeshResource.generateText(
+            str,
+            extrusionDepth: Float(font.pointSize) * 0.1,
+            font: font,
+            containerFrame: CGRect(x: 0, y: 0, width: frame.x, height: frame.y),
+            alignment: alignment,
+            lineBreakMode: lineBreakMode
+        )
+        let text = ModelEntity(mesh: mesh, materials: materials)
+        if alignment == .center {
+            let centerer = Entity()
+            centerer.addChild(text)
+            text.transform.translation = simd_float3(
+                -mesh.bounds.center.x,
+                 -mesh.bounds.center.y,
+                 0
+            )
+            return centerer
+        }
+        return text
+    }
 }
 
 struct ServerMessage: Codable {
     var type: Int
     var scene: SceneUpdate
-    var taginstances: [TagInstance]?
+    var instances: [InstanceUpdate]?
 }
 
 struct SceneUpdate: Codable {
@@ -324,9 +388,10 @@ struct SceneUpdate: Codable {
     var scene: Object
 }
 
-struct TagInstance: Codable {
-    var tag: Int
+struct InstanceUpdate: Codable {
     var instance: Int
+    var program: String
+    var tag: Int?
 }
 
 struct ClientMessage: Codable {

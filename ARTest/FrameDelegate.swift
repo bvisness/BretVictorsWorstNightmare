@@ -24,6 +24,7 @@ class FrameDelegate : NSObject, ARSessionDelegate {
     weak var delegate: NightmareTrackingDelegate?
     
     static let tagSize = 0.0318
+    static let tagOuterSize = 0.0572
 
     let apriltagNFrames = 5
     let qrNFrames = 30
