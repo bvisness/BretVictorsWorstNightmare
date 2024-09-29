@@ -68,7 +68,12 @@ type Object struct {
 	ID   string     `msgpack:"id"`
 	Pos  Vec3       `msgpack:"pos"`
 	Size Vec3       `msgpack:"size"`
-	Text string     `msgpack:"text"` // for ObjectTypeText
+
+	// for ObjectTypeText
+	Text      string  `msgpack:"text"`
+	TextSize  float64 `msgpack:"textsize"`
+	TextAlign string  `msgpack:"textalign"`
+	TextWrap  bool    `msgpack:"textwrap"`
 
 	Children []Object `msgpack:"children"`
 }
@@ -270,6 +275,9 @@ func Lua2Object(L *lua.LState, lobj lua.LValue) (Object, bool) {
 	pos := getVec3(L, L.GetField(lobj, "pos"), Vec3{0, 0, 0})
 	size := getVec3(L, L.GetField(lobj, "size"), Vec3{1, 1, 1})
 	text := lua.LVAsString(L.GetField(lobj, "text"))
+	textsize := lua.LVAsNumber(L.GetField(lobj, "textsize"))
+	textalign := lua.LVAsString(L.GetField(lobj, "textalign"))
+	textwrap := lua.LVAsBool(L.GetField(lobj, "textwrap"))
 
 	objTypeGo, ok := objtype2go[objType]
 	if !ok {
@@ -277,12 +285,19 @@ func Lua2Object(L *lua.LState, lobj lua.LValue) (Object, bool) {
 		return Object{}, false
 	}
 
+	if textsize == 0 {
+		textsize = 0.05
+	}
+
 	obj := Object{
-		Type: objTypeGo,
-		ID:   id,
-		Pos:  pos,
-		Size: size,
-		Text: text,
+		Type:      objTypeGo,
+		ID:        id,
+		Pos:       pos,
+		Size:      size,
+		Text:      text,
+		TextSize:  float64(textsize),
+		TextAlign: textalign,
+		TextWrap:  textwrap,
 	}
 
 	for i := 1; i <= L.ObjLen(lobj); i++ {

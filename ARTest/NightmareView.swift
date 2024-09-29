@@ -345,13 +345,28 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
                 Float(object.size[0]), Float(object.size[1]), Float(object.size[2])
             )
         case 5:
-            entity = ModelEntity(
-                mesh: MeshResource.generateText(
-                    object.text,
-                    extrusionDepth: 0.01,
-                    font: .systemFont(ofSize: object.size[0])
-                ),
-                materials: [material]
+            let alignment: CTTextAlignment = switch object.textalign {
+            case "center": .center
+            case "right": .right
+            default: .left
+            }
+            let lineBreakMode: CTLineBreakMode = object.textwrap ? .byWordWrapping : .byTruncatingTail
+            
+            // Hack: You're supposed to specify text size with two elements instead of three.
+            // That means that the third component will be zero if you provide it. But if you
+            // leave out the size then it defaults to (1, 1, 1), and if you leave out the size,
+            // you should have no explicit text frame. So if the third component is 1 we can use
+            // a frame of zero, and otherwise we can use a real frame. This is totally incoherent
+            // but I have no more time left.
+            let frame = object.size[2] == 1 ? CGPoint.zero : CGPoint(x: object.size[0], y: object.size[1])
+            
+            entity = renderText(
+                object.text,
+                materials: [material],
+                font: .systemFont(ofSize: object.textsize),
+                frame: frame,
+                alignment: alignment,
+                lineBreakMode: lineBreakMode
             )
         case 6: // trigger box
             entity = TriggerVolume(shape: ShapeResource.generateBox(
@@ -480,6 +495,9 @@ struct Object: Codable {
     var pos: [Float64]
     var size: [Float64]
     var text: String
+    var textsize: Float64
+    var textalign: String
+    var textwrap: Bool
     
     var children: [Object]?
 }

@@ -80,22 +80,26 @@ function ARRenderScene()
   for i, y in ipairs({ 1, 0, -1 }) do
     for j, x in ipairs({ -1, 0, 1 }) do
       local idx = (i-1) * 3 + j
-      table.insert(cells, { type = "triggerbox", id = "cell"..idx, pos = { x * 0.24, y * 0.24, 0 }, size = { 0.24, 0.24, 0.01 } })
+      table.insert(cells, { type = "triggerbox", id = "cell"..idx, pos = { x * 0.05, y * 0.05, 0 }, size = { 0.05, 0.05, 0.01 } })
       local contents = data.board[idx]
       if contents ~= "" then
-        table.insert(cells, { type = "text", text = contents, pos = { x * 0.24 - 0.06, y * 0.24 - 0.10, 0 }, size = 0.20 })
+        table.insert(cells, {
+          type = "text",
+          pos = { x * 0.06, y * 0.06, 0 },
+          text = contents, textalign = "center",
+        })
       end
     end
   end
 
   return {
-    { pos = { 0, 0.6, 0 },
-      { type = "box", pos = { -0.12, 0, 0 }, size = { 0.02, 0.72, 0.01 } },
-      { type = "box", pos = { 0.12, 0, 0 }, size = { 0.02, 0.72, 0.01 } },
-      { type = "box", pos = { 0, -0.12, 0 }, size = { 0.72, 0.02, 0.01 } },
-      { type = "box", pos = { 0, 0.12, 0 }, size = { 0.72, 0.02, 0.01 } },
+    { pos = { 0, 0.20, 0 },
+      { type = "box", pos = { -0.03, 0, 0 }, size = { 0.01, 0.17, 0.01 } },
+      { type = "box", pos = { 0.03, 0, 0 }, size = { 0.01, 0.17, 0.01 } },
+      { type = "box", pos = { 0, -0.03, 0 }, size = { 0.17, 0.01, 0.01 } },
+      { type = "box", pos = { 0, 0.03, 0 }, size = { 0.17, 0.01, 0.01 } },
       cells,
-      { type = "text", text = msg, pos = { -0.36, -0.50, 0 }, size = 0.10 }
+      { type = "text", text = msg, pos = { -0.08, -0.15, 0 } }
     }
   }
 end
