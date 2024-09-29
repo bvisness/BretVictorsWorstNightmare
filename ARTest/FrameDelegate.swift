@@ -13,6 +13,7 @@ import Vision
 
 protocol NightmareTrackingDelegate: AnyObject {
     func detectedTags(tags: [TagDetection])
+    func detectedQRCodes(barcodes: [VNBarcodeObservation])
 }
 
 struct TagDetection {
@@ -156,11 +157,13 @@ class FrameDelegate : NSObject, ARSessionDelegate {
 
             let qrRequest = VNDetectBarcodesRequest(completionHandler: { request, error in
                 guard let results = request.results else { return }
+                var barcodes: [VNBarcodeObservation] = []
                 for result in results {
                     if let barcode = result as? VNBarcodeObservation {
-                        // TODO: Do something with barcode.payloadStringValue
+                        barcodes.append(barcode)
                     }
                 }
+                self.delegate?.detectedQRCodes(barcodes: barcodes)
             })
             let handler = VNImageRequestHandler(cvPixelBuffer: frame.capturedImage, options: [:])
             try! handler.perform([qrRequest])

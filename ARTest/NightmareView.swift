@@ -47,7 +47,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         let id: Int
         let program: String
         let root: Entity = Entity()
-        var data: Data = Data()
+        var data: Data?
         var sceneHash: Int = 0
         
         init(id: Int, program: String) {
@@ -55,9 +55,14 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
             self.program = program
         }
     }
+    struct PendingProgram {
+        let program: String
+        let data: Data?
+    }
     var instances: [Int: Instance] = [:]
-    var copiedInstance: Instance?
-    var copiedInstancePreview: Entity?
+    var copiedProgram: PendingProgram?
+    var copiedProgramPreview: Entity?
+    var scannedProgram: String?
     
     var conn: WebSocketConnection!
     
@@ -120,16 +125,16 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
             cameraEntity.transform.matrix = frame.camera.transform
         }
         
-        if copiedInstance != nil && copiedInstancePreview == nil {
-            let preview = renderTag(program: copiedInstance!.program)
+        if copiedProgram != nil && copiedProgramPreview == nil {
+            let preview = renderTag(program: copiedProgram!.program)
             preview.transform.translation = simd_float3(0.02, -0.01, -0.05)
             preview.transform.scale = simd_float3(0.2, 0.2, 0.2)
             preview.transform.rotation = simd_quatf(angle: .pi/2, axis: simd_float3(0, 0, 1))
             cameraEntity.addChild(preview)
-            copiedInstancePreview = preview
-        } else if copiedInstance == nil && copiedInstancePreview != nil {
-            copiedInstancePreview!.removeFromParent()
-            copiedInstancePreview = nil
+            copiedProgramPreview = preview
+        } else if copiedProgram == nil && copiedProgramPreview != nil {
+            copiedProgramPreview!.removeFromParent()
+            copiedProgramPreview = nil
         }
     }
     
@@ -153,38 +158,54 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     
     @objc private func handleSwipe(_ sender: UISwipeGestureRecognizer) {
         let hitEntities = self.raycastCenter()
-        guard let hit = hitEntities.first else {
-            return
-        }
-        let tag: Int
-        if hit.name.hasPrefix("__tag") {
-            tag = Int(hit.name.substring(from: "__tag".count))!
-        } else {
-            print("Swiped on non-tag object \(hit)")
-            return
-        }
+        let tag = hitTag(hit: hitEntities.first)
         
         if sender.direction == .up {
-            if let paste = copiedInstance {
-                let message = ClientMessage(type: .instantiate, instantiate: InstantiateRequest(
-                    program: paste.program,
-                    data: paste.data,
-                    tag: tag
-                ))
-                let data = try! MessagePackEncoder().encode(message)
-                conn.send(data: data)
-                copiedInstance = .none
-                print("Requested instantiation of program \(paste.program)")
+            guard let tag = tag else {
+                print("Swiped up, but not on tag")
+                return
             }
+            guard let paste = copiedProgram else {
+                print("No program to paste")
+                return
+            }
+            
+            let message = ClientMessage(type: .instantiate, instantiate: InstantiateRequest(
+                program: paste.program,
+                data: paste.data,
+                tag: tag
+            ))
+            let data = try! MessagePackEncoder().encode(message)
+            conn.send(data: data)
+            copiedProgram = .none
+            print("Requested instantiation of program \(paste.program) for tag \(tag)")
         } else if sender.direction == .down {
-            if let instanceID = tagInstance(tag: tag) {
-                // Swiping down copies this tag's instance to the phone
+            if let tag = tag, let instanceID = tagInstance(tag: tag) {
+                // Swiping down copies this tag's program/data to the phone
                 let instance = instances[instanceID]!
-                copiedInstance = Instance(id: instances.count, program: instance.program)
-                copiedInstance!.data = instance.data
+                copyProgram(PendingProgram(program: instance.program, data: instance.data))
                 print("Copied instance of program \(instance.program)")
+            } else if let scanned = scannedProgram {
+                copyProgram(PendingProgram(program: scanned, data: nil))
+                print("Copied fresh instance of program \(scanned)")
+            } else {
+                print("Nothing to swipe down on")
             }
         }
+    }
+    
+    func hitTag(hit: Entity?) -> Int? {
+        guard let hit = hit else { return nil }
+        if hit.name.hasPrefix("__tag") {
+            return Int(hit.name.substring(from: "__tag".count))!
+        }
+        return nil
+    }
+    
+    func copyProgram(_ p: PendingProgram) {
+        copiedProgram = p
+        copiedProgramPreview?.removeFromParent()
+        copiedProgramPreview = nil
     }
     
     func tagInstance(tag: Int) -> Int? {
@@ -314,6 +335,34 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
             }
             tagEntities[tag.id].transform = tag.pose
         }
+    }
+    
+    func detectedQRCodes(barcodes: [VNBarcodeObservation]) {
+        if barcodes.isEmpty {
+            scannedProgram = nil
+            return
+        }
+        
+        let center = CGPoint(x: bounds.midX, y: bounds.midY)
+        var centermost = barcodes.first!
+        for barcode in barcodes[1...] {
+            let oldCenter = CGPoint(x: centermost.boundingBox.midX, y: centermost.boundingBox.midY)
+            let newCenter = CGPoint(x: barcode.boundingBox.midX, y: barcode.boundingBox.midY)
+            if (newCenter - center).length < (oldCenter - center).length {
+                centermost = barcode
+            }
+        }
+        
+        guard let payload = centermost.payloadStringValue else {
+            print("Non-string QR code.")
+            return
+        }
+        if !payload.hasPrefix("nightmare://") {
+            print("Non-nightmare QR code.")
+            return
+        }
+        scannedProgram = payload.substring(from: "nightmare://".count)
+        print("Scanned program \(scannedProgram!)")
     }
     
     func renderEntity(object: Object) -> Entity? {
@@ -485,7 +534,7 @@ struct ClientMessage: Codable {
 
 struct InstantiateRequest: Codable {
     var program: String
-    var data: Data
+    var data: Data?
     var tag: Int
 }
 

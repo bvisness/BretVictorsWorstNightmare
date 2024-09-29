@@ -62,6 +62,10 @@ extension CGPoint {
     }
 }
 
+func -(lhs: CGPoint, rhs: CGPoint) -> CGPoint {
+    return CGPoint(x: lhs.x - rhs.x, y: lhs.y - rhs.y)
+}
+
 // MARK: - Substrings that are not insane
 
 extension String {

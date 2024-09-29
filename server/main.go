@@ -91,19 +91,21 @@ func main() {
 						break
 					}
 
-					var instanceData program.Data
-					msgpack.Unmarshal(msg.Instantiate.Data, &instanceData)
-					if err != nil {
-						log.Printf("ERROR! Failed to deserialize instance data: %v", err)
-						break
-					}
-
-					newInstanceID, err := instantiate(p, msg.Instantiate.Data == nil)
+					init := len(msg.Instantiate.Data) == 0
+					newInstanceID, err := instantiate(p, init)
 					if err != nil {
 						log.Printf("ERROR! Failed to instantiate: %v", err)
 						break
 					}
-					instances[newInstanceID].Data = instanceData
+					if !init {
+						var instanceData program.Data
+						err := msgpack.Unmarshal(msg.Instantiate.Data, &instanceData)
+						if err != nil {
+							log.Printf("ERROR! Failed to deserialize instance data: %v", err)
+							break
+						}
+						instances[newInstanceID].Data = instanceData
+					}
 
 					if msg.Instantiate.Tag != -1 {
 						log.Printf("Associating program with tag %d.", msg.Instantiate.Tag)
