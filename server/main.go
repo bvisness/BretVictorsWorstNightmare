@@ -83,6 +83,32 @@ func main() {
 				case MessageTypeTap:
 					log.Printf("Tapped on ID %v", msg.EntityID)
 					instances[msg.Instance].Tap(msg.EntityID)
+				case MessageTypeInstantiate:
+					log.Printf("Instantiating program %s!", msg.Instantiate.Program)
+					p, ok := programs[msg.Instantiate.Program]
+					if !ok {
+						log.Printf("wtf is program %s", msg.Instantiate.Program)
+						break
+					}
+
+					var instanceData program.Data
+					msgpack.Unmarshal(msg.Instantiate.Data, &instanceData)
+					if err != nil {
+						log.Printf("ERROR! Failed to deserialize instance data: %v", err)
+						break
+					}
+
+					newInstanceID, err := instantiate(p, msg.Instantiate.Data == nil)
+					if err != nil {
+						log.Printf("ERROR! Failed to instantiate: %v", err)
+						break
+					}
+					instances[newInstanceID].Data = instanceData
+
+					if msg.Instantiate.Tag != -1 {
+						log.Printf("Associating program with tag %d.", msg.Instantiate.Tag)
+						tag2instance[msg.Instantiate.Tag] = newInstanceID
+					}
 				default:
 					log.Printf("Ignoring client message of type %v", msg.Type)
 				}
@@ -98,6 +124,7 @@ func main() {
 				update := InstanceUpdate{
 					Instance: InstanceID(id),
 					Program:  instance.Program.Name,
+					Data:     utils.Must1(msgpack.Marshal(instance.Data)),
 				}
 				for tag, otherID := range tag2instance {
 					if InstanceID(id) == otherID {
@@ -180,13 +207,21 @@ type SceneUpdate struct {
 type InstanceUpdate struct {
 	Instance InstanceID `msgpack:"instance"`
 	Program  string     `msgpack:"program"`
+	Data     []byte     `msgpack:"data"`
 	Tag      *int       `msgpack:"tag,omitempty"`
 }
 
 type ClientMessage struct {
-	Type     ClientMessageType `msgpack:"type"`
-	Instance InstanceID        `msgpack:"instance"`
-	EntityID string            `msgpack:"entityid"`
+	Type        ClientMessageType  `msgpack:"type"`
+	Instance    InstanceID         `msgpack:"instance"`
+	EntityID    string             `msgpack:"entityid"`
+	Instantiate InstantiateRequest `msgpack:"instantiate"`
+}
+
+type InstantiateRequest struct {
+	Program string `msgpack:"program"`
+	Data    []byte `msgpack:"data"`
+	Tag     int    `msgpack:"tag"`
 }
 
 type ServerMessageType int
@@ -200,4 +235,5 @@ const (
 const (
 	MessageTypeTap ClientMessageType = iota + 1
 	MessageTypeHover
+	MessageTypeInstantiate
 )

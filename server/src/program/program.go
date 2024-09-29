@@ -30,19 +30,19 @@ type Instance struct {
 }
 
 type Data struct {
-	Type DataType
+	Type DataType `msgpack:"type"`
 
-	TableValue  []MapEntry
-	BoolValue   bool
-	NumberValue float64
-	StringValue string
+	TableValue  []MapEntry `msgpack:"tablevalue"`
+	BoolValue   bool       `msgpack:"boolvalue"`
+	NumberValue float64    `msgpack:"numbervalue"`
+	StringValue string     `msgpack:"stringvalue"`
 }
 
 type MapEntry struct {
-	KeyType   KeyType
-	StringKey string
-	NumberKey float64
-	Value     Data
+	KeyType   KeyType `msgpack:"keytype"`
+	StringKey string  `msgpack:"stringkey"`
+	NumberKey float64 `msgpack:"numberkey"`
+	Value     Data    `msgpack:"value"`
 }
 
 type KeyType int

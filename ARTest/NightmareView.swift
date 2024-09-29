@@ -47,6 +47,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         let id: Int
         let program: String
         let root: Entity = Entity()
+        var data: Data = Data()
         var sceneHash: Int = 0
         
         init(id: Int, program: String) {
@@ -55,6 +56,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         }
     }
     var instances: [Int: Instance] = [:]
+    var copiedInstance: Instance?
     
     var conn: WebSocketConnection!
     
@@ -66,7 +68,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         session.delegate = frameDelegate
         renderOptions.insert(.disableMotionBlur)
 
-        conn = WebSocketTaskConnection(url: URL(string: "ws://192.168.0.32:8080/")!)
+        conn = WebSocketTaskConnection(url: URL(string: "ws://192.168.1.144:8080/")!)
         conn.delegate = self
         conn.connect()
         
@@ -150,12 +152,35 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         }
         
         if sender.direction == .up {
-            print("Swipe-Up detected")
-            // Handle swipe-up action
+            if let paste = copiedInstance {
+                let message = ClientMessage(type: .instantiate, instantiate: InstantiateRequest(
+                    program: paste.program,
+                    data: paste.data,
+                    tag: tag
+                ))
+                let data = try! MessagePackEncoder().encode(message)
+                conn.send(data: data)
+                copiedInstance = .none
+                print("Requested instantiation of program \(paste.program)")
+            }
         } else if sender.direction == .down {
-            // TODO: Copy app
-            print("Swiped down on tag \(tag)")
+            if let instanceID = tagInstance(tag: tag) {
+                // Swiping down copies this tag's instance to the phone
+                let instance = instances[instanceID]!
+                copiedInstance = Instance(id: instances.count, program: instance.program)
+                copiedInstance!.data = instance.data
+                print("Copied instance of program \(instance.program)")
+            }
         }
+    }
+    
+    func tagInstance(tag: Int) -> Int? {
+        for instance in instances.values {
+            if isChildOf(entity: instance.root, parent: tagEntities[tag]) {
+                return instance.id
+            }
+        }
+        return .none
     }
     
     func raycastCenter() -> [Entity] {
@@ -252,6 +277,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
                     instance = Instance(id: update.instance, program: update.program)
                     instances[instance.id] = instance
                 }
+                instance.data = update.data
 
                 if let tag = update.tag {
                     let tagEntity = tagEntities[tag]
@@ -412,18 +438,27 @@ struct SceneUpdate: Codable {
 struct InstanceUpdate: Codable {
     var instance: Int
     var program: String
+    var data: Data
     var tag: Int?
 }
 
 struct ClientMessage: Codable {
     var type: ClientMessage.MessageType
-    var instance: Int
-    var entityid: String
+    var instance: Int?
+    var entityid: String?
+    var instantiate: InstantiateRequest?
     
     enum MessageType: Int, Codable {
         case tap = 1
         case hover = 2
+        case instantiate = 3
     }
+}
+
+struct InstantiateRequest: Codable {
+    var program: String
+    var data: Data
+    var tag: Int
 }
 
 struct Object: Codable {
