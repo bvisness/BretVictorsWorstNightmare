@@ -57,6 +57,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     }
     var instances: [Int: Instance] = [:]
     var copiedInstance: Instance?
+    var copiedInstancePreview: Entity?
     
     var conn: WebSocketConnection!
     
@@ -68,7 +69,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         session.delegate = frameDelegate
         renderOptions.insert(.disableMotionBlur)
 
-        conn = WebSocketTaskConnection(url: URL(string: "ws://192.168.1.144:8080/")!)
+        conn = WebSocketTaskConnection(url: URL(string: "ws://192.168.1.6:8080/")!)
         conn.delegate = self
         conn.connect()
         
@@ -117,6 +118,18 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         let deltaTime = updateEvent.deltaTime
         if let frame = session.currentFrame {
             cameraEntity.transform.matrix = frame.camera.transform
+        }
+        
+        if copiedInstance != nil && copiedInstancePreview == nil {
+            let preview = renderTag(program: copiedInstance!.program)
+            preview.transform.translation = simd_float3(0.02, -0.01, -0.05)
+            preview.transform.scale = simd_float3(0.2, 0.2, 0.2)
+            preview.transform.rotation = simd_quatf(angle: .pi/2, axis: simd_float3(0, 0, 1))
+            cameraEntity.addChild(preview)
+            copiedInstancePreview = preview
+        } else if copiedInstance == nil && copiedInstancePreview != nil {
+            copiedInstancePreview!.removeFromParent()
+            copiedInstancePreview = nil
         }
     }
     
