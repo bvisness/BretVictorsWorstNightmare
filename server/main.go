@@ -45,7 +45,7 @@ func init() {
 		Name:   "Tic-Tac-Toe",
 		Source: program.TicTacToe,
 	})
-	tag2instance[0] = utils.Must1(instantiate(programs["Tic-Tac-Toe"], true))
+	// tag2instance[0] = utils.Must1(instantiate(programs["Tic-Tac-Toe"], true))
 	// tag2instance[1] = utils.Must1(instantiate(programs["Tic-Tac-Toe"], true))
 }
 

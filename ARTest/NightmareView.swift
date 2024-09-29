@@ -33,8 +33,8 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     var tagEntities: [Entity] = []
     let cameraEntity = Entity()
     let cursor = ModelEntity(
-        mesh: MeshResource.generateSphere(radius: 0.005),
-        materials: [SimpleMaterial(color: .systemBlue, roughness: 0.25, isMetallic: false)]
+        mesh: MeshResource.generateSphere(radius: 0.0001),
+        materials: [SimpleMaterial(color: .black, roughness: 1, isMetallic: true)]
     )
     lazy var tagCoverMaterial = {
         var mat = PhysicallyBasedMaterial()
@@ -78,8 +78,8 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         conn.delegate = self
         conn.connect()
         
-        cursor.transform.translation.z = -0.15
-//        cameraEntity.children.append(cursor)
+        cursor.transform.translation.z = -0.02
+        cameraEntity.children.append(cursor)
 
         scene.anchors.append(origin)
         for tagEntity in tagEntities {
