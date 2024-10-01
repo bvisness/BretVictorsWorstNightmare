@@ -45,6 +45,10 @@ func init() {
 		Name:   "Tic-Tac-Toe",
 		Source: program.TicTacToe,
 	})
+	registerProgram(&program.Program{
+		Name:   "Calculator",
+		Source: program.Calculator,
+	})
 	// tag2instance[0] = utils.Must1(instantiate(programs["Tic-Tac-Toe"], true))
 	// tag2instance[1] = utils.Must1(instantiate(programs["Tic-Tac-Toe"], true))
 }
@@ -118,7 +122,7 @@ func main() {
 		}()
 
 		// Server message send loop
-		for range time.NewTicker(time.Millisecond * 100).C {
+		for range time.NewTicker(time.Millisecond * 1000).C {
 			var instanceUpdates []InstanceUpdate
 			var activeInstances []InstanceID
 			for id, instance := range instances {
@@ -176,7 +180,7 @@ func main() {
 }
 
 func runPrograms() {
-	for range time.NewTicker(time.Millisecond * 100).C {
+	for range time.NewTicker(time.Millisecond * 20).C {
 		// We swap the rendered scene data to an entirely separate array to
 		// avoid data race issues. We don't necessarily care if every client
 		// gets the newest set of scene data, only that they receive a coherent

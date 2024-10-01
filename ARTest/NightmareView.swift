@@ -288,10 +288,8 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
             if hash != instance.sceneHash {
                 DispatchQueue.main.async {
                     // Reset the scene
-                    for child in instance.root.children {
-                        child.removeFromParent()
-                    }
-                    
+                    instance.root.children.removeAll()
+
                     // Render the scene
                     if let rendered = self.renderEntity(object: msg.scene.scene) {
                         instance.root.addChild(rendered)
@@ -368,7 +366,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     func renderEntity(object: Object) -> Entity? {
         let entity: Entity
         var material = PhysicallyBasedMaterial()
-        material.baseColor = PhysicallyBasedMaterial.BaseColor(tint: .black)
+        material.baseColor = PhysicallyBasedMaterial.BaseColor(tint: text2color(object.color))
         material.roughness = 0.25
 //                    material.blending = .transparent(opacity: 0.5)
         
@@ -499,6 +497,26 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         }
         return text
     }
+    
+    func text2color(_ str: String) -> UIColor {
+        return switch str {
+        case "black": .black
+        case "darkGray": .darkGray
+        case "lightGray": .lightGray
+        case "white": .white
+        case "gray": .gray
+        case "red": .red
+        case "green": .green
+        case "blue": .blue
+        case "cyan": .cyan
+        case "yellow": .yellow
+        case "magenta": .magenta
+        case "orange": .orange
+        case "purple": .purple
+        case "brown": .brown
+        default: .black
+        }
+    }
 }
 
 struct ServerMessage: Codable {
@@ -543,6 +561,7 @@ struct Object: Codable {
     var id: String
     var pos: [Float64]
     var size: [Float64]
+    var color: String
     var text: String
     var textsize: Float64
     var textalign: String

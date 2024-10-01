@@ -13,6 +13,9 @@ import (
 //go:embed tictactoe.lua
 var TicTacToe string
 
+//go:embed calculator.lua
+var Calculator string
+
 //go:embed pprint.lua
 var PPrint string
 
@@ -64,10 +67,11 @@ const (
 type Vec3 [3]float64
 
 type Object struct {
-	Type ObjectType `msgpack:"type"`
-	ID   string     `msgpack:"id"`
-	Pos  Vec3       `msgpack:"pos"`
-	Size Vec3       `msgpack:"size"`
+	Type  ObjectType `msgpack:"type"`
+	ID    string     `msgpack:"id"`
+	Pos   Vec3       `msgpack:"pos"`
+	Size  Vec3       `msgpack:"size"`
+	Color string     `msgpack:"color"`
 
 	// for ObjectTypeText
 	Text      string  `msgpack:"text"`
@@ -274,6 +278,7 @@ func Lua2Object(L *lua.LState, lobj lua.LValue) (Object, bool) {
 	id := lua.LVAsString(L.GetField(lobj, "id"))
 	pos := getVec3(L, L.GetField(lobj, "pos"), Vec3{0, 0, 0})
 	size := getVec3(L, L.GetField(lobj, "size"), Vec3{1, 1, 1})
+	color := lua.LVAsString(L.GetField(lobj, "color"))
 	text := lua.LVAsString(L.GetField(lobj, "text"))
 	textsize := lua.LVAsNumber(L.GetField(lobj, "textsize"))
 	textalign := lua.LVAsString(L.GetField(lobj, "textalign"))
@@ -294,6 +299,7 @@ func Lua2Object(L *lua.LState, lobj lua.LValue) (Object, bool) {
 		ID:        id,
 		Pos:       pos,
 		Size:      size,
+		Color:     color,
 		Text:      text,
 		TextSize:  float64(textsize),
 		TextAlign: textalign,
