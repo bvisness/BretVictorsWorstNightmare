@@ -63,7 +63,7 @@ function ARRenderScene()
   return {
     pos = { 0.06, 0, 0 },
 
-    { type = "text", text = display, textsize = textsize, pos = { 0, 0.03, 0 } },
+    { type = "text", text = display, textsize = textsize * 1.5, pos = { -0.02, 0.02, 0 } },
     rows,
   }
 end
@@ -72,7 +72,7 @@ function Btn(text, color)
   return {
     { type = "box", color = color, pos = { 0, 0, 0.005 }, size = { 0.04, 0.03, 0.01 } },
     { type = "text", text = text, textsize = textsize, textalign = "center", pos = { 0, 0, 0.01 } },
-    { type = "triggerbox", id = text, pos = { 0, 0, 0.01 }, size = { 0.04, 0.03, 0.02 } }
+    { type = "triggerbox", id = text, pos = { 0, 0, 0.01 }, size = { 0.04, 0.03, 0.01 } }
   }
 end
 
@@ -80,7 +80,7 @@ function Btn2(text, color)
   return {
     { type = "box", color = color, pos = { 0.02, 0, 0.005 }, size = { 0.08, 0.03, 0.01 } },
     { type = "text", text = text, textsize = textsize, textalign = "center", pos = { 0.02, 0, 0.01 } },
-    { type = "triggerbox", id = text, pos = { 0.02, 0, 0.01 }, size = { 0.08, 0.03, 0.02 } },
+    { type = "triggerbox", id = text, pos = { 0.02, 0, 0.01 }, size = { 0.08, 0.03, 0.01 } },
   }
 end
 

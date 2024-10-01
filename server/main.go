@@ -12,6 +12,9 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 )
 
+const instanceTickRate = time.Millisecond * 20
+const clientUpdateRate = time.Millisecond * 200
+
 // TODO: Save these persistently
 var programs = make(map[string]*program.Program)
 var instances []*program.Instance
@@ -122,7 +125,7 @@ func main() {
 		}()
 
 		// Server message send loop
-		for range time.NewTicker(time.Millisecond * 1000).C {
+		for range time.NewTicker(clientUpdateRate).C {
 			var instanceUpdates []InstanceUpdate
 			var activeInstances []InstanceID
 			for id, instance := range instances {
@@ -180,7 +183,7 @@ func main() {
 }
 
 func runPrograms() {
-	for range time.NewTicker(time.Millisecond * 20).C {
+	for range time.NewTicker(instanceTickRate).C {
 		// We swap the rendered scene data to an entirely separate array to
 		// avoid data race issues. We don't necessarily care if every client
 		// gets the newest set of scene data, only that they receive a coherent
