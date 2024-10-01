@@ -63,6 +63,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     var copiedProgram: PendingProgram?
     var copiedProgramPreview: Entity?
     var scannedProgram: String?
+    var detectedTags = Set<Int>()
     
     var conn: WebSocketConnection!
     
@@ -141,7 +142,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     @objc private func handleTap(_ sender: UITapGestureRecognizer) {
         let tapLocation = sender.location(in: self)
 
-        let hitEntities = self.raycastCenter()
+        let hitEntities = self.raycast(point: tapLocation)
         guard let hit = hitEntities.first else {
             return
         }
@@ -217,9 +218,8 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         return .none
     }
     
-    func raycastCenter() -> [Entity] {
-        let center = CGPoint(x: bounds.midX, y: bounds.midY)
-        if let ray = self.ray(through: center) {
+    func raycast(point: CGPoint) -> [Entity] {
+        if let ray = self.ray(through: point) {
             let hits = scene.raycast(origin: ray.origin, direction: ray.direction)
             var hitEntities: [Entity] = []
             for hit in hits {
@@ -228,6 +228,10 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
             return hitEntities
         }
         return []
+    }
+    
+    func raycastCenter() -> [Entity] {
+        return raycast(point: CGPoint(x: bounds.midX, y: bounds.midY))
     }
     
     func entity2instance(_ entity: Entity) -> Instance? {
@@ -311,13 +315,13 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
                 }
                 instance.data = update.data
 
-                if let tag = update.tag {
+                if let tag = update.tag, detectedTags.contains(tag) {
                     let tagEntity = tagEntities[tag]
                     if !isChildOf(entity: instance.root, parent: tagEntity) {
                         instance.root.removeFromParent()
                         tagEntity.addChild(instance.root)
                     }
-                } else { // Not associated with a tag; remove from scene
+                } else { // Not associated with a tag or haven't seen the tag; remove from scene
                     instance.root.removeFromParent()
                 }
             }
@@ -328,6 +332,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     
     func detectedTags(tags: [TagDetection]) {
         for tag in tags {
+            detectedTags.insert(tag.id)
             if tag.id > tagEntities.count {
                 break
             }
