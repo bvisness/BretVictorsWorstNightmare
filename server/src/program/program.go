@@ -3,6 +3,7 @@ package program
 import (
 	"fmt"
 	"log"
+	"math"
 
 	_ "embed"
 
@@ -15,6 +16,9 @@ var TicTacToe string
 
 //go:embed calculator.lua
 var Calculator string
+
+//go:embed vectors.lua
+var Vectors string
 
 //go:embed pprint.lua
 var PPrint string
@@ -65,11 +69,39 @@ const (
 )
 
 type Vec3 [3]float64
+type Quat [4]float64
+
+func (v Vec3) Len() float64 {
+	return math.Sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2])
+}
+
+func (v Vec3) Normalized() Vec3 {
+	l := v.Len()
+	return Vec3{v[0] / l, v[1] / l, v[2] / l}
+}
+
+func (v Vec3) Dot(b Vec3) float64 {
+	return v[0]*b[0] + v[1]*b[1] + v[2]*b[2]
+}
+
+func (v Vec3) Cross(b Vec3) Vec3 {
+	return Vec3{
+		(v[1] * b[2]) - (v[2] * b[1]),
+		(v[2] * b[0]) - (v[0] * b[2]),
+		(v[0] * b[1]) - (v[1] * b[0]),
+	}
+}
+
+func (q Quat) Normalized() Quat {
+	norm := math.Sqrt(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3])
+	return Quat{q[0] / norm, q[1] / norm, q[2] / norm, q[3] / norm}
+}
 
 type Object struct {
 	Type  ObjectType `msgpack:"type"`
 	ID    string     `msgpack:"id"`
 	Pos   Vec3       `msgpack:"pos"`
+	Rot   Quat       `msgpack:"rot"`
 	Size  Vec3       `msgpack:"size"`
 	Color string     `msgpack:"color"`
 
@@ -290,6 +322,37 @@ func Lua2Object(L *lua.LState, lobj lua.LValue) (Object, bool) {
 		return Object{}, false
 	}
 
+	rot := Quat{0, 0, 0, 1}
+	if rotTable, ok := L.GetField(lobj, "rot").(*lua.LTable); ok {
+		if L.GetField(rotTable, "axis") != lua.LNil {
+			axis := getVec3(L, L.GetField(rotTable, "axis"), Vec3{1, 0, 0})
+			angle := float64(lua.LVAsNumber(L.GetField(rotTable, "angle")))
+
+			axisNorm := math.Sqrt(axis[0]*axis[0] + axis[1]*axis[1] + axis[2]*axis[2])
+			axis = Vec3{axis[0] / axisNorm, axis[1] / axisNorm, axis[2] / axisNorm}
+			sineOfRotation := math.Sin(angle / 2)
+
+			rot = Quat{
+				axis[0] * sineOfRotation,
+				axis[1] * sineOfRotation,
+				axis[2] * sineOfRotation,
+				math.Cos(angle / 2),
+			}
+		} else if L.GetField(rotTable, "from") != lua.LNil {
+			from := getVec3(L, L.GetField(rotTable, "from"), Vec3{1, 0, 0}).Normalized()
+			to := getVec3(L, L.GetField(rotTable, "to"), Vec3{1, 0, 0}).Normalized()
+
+			cross := from.Cross(to)
+			dot := from.Dot(to)
+			rot = Quat{
+				cross[0],
+				cross[1],
+				cross[2],
+				1 + dot,
+			}.Normalized()
+		}
+	}
+
 	if textsize == 0 {
 		textsize = 0.05
 	}
@@ -298,6 +361,7 @@ func Lua2Object(L *lua.LState, lobj lua.LValue) (Object, bool) {
 		Type:      objTypeGo,
 		ID:        id,
 		Pos:       pos,
+		Rot:       rot,
 		Size:      size,
 		Color:     color,
 		Text:      text,

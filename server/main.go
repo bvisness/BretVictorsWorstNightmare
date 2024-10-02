@@ -24,6 +24,23 @@ var renderedScenes []program.Object
 
 type InstanceID int
 
+func init() {
+	registerProgram(&program.Program{
+		Name:   "Tic-Tac-Toe",
+		Source: program.TicTacToe,
+	})
+	registerProgram(&program.Program{
+		Name:   "Calculator",
+		Source: program.Calculator,
+	})
+	registerProgram(&program.Program{
+		Name:   "Stopwatch",
+		Source: program.Vectors, // HACK
+	})
+	// tag2instance[0] = utils.Must1(instantiate(programs["Tic-Tac-Toe"], true))
+	// tag2instance[1] = utils.Must1(instantiate(programs["Tic-Tac-Toe"], true))
+}
+
 func registerProgram(p *program.Program) {
 	programs[p.Name] = p
 }
@@ -41,19 +58,6 @@ func instantiate(p *program.Program, init bool) (InstanceID, error) {
 	}
 	instances = append(instances, instance)
 	return InstanceID(len(instances) - 1), nil
-}
-
-func init() {
-	registerProgram(&program.Program{
-		Name:   "Tic-Tac-Toe",
-		Source: program.TicTacToe,
-	})
-	registerProgram(&program.Program{
-		Name:   "Calculator",
-		Source: program.Calculator,
-	})
-	// tag2instance[0] = utils.Must1(instantiate(programs["Tic-Tac-Toe"], true))
-	// tag2instance[1] = utils.Must1(instantiate(programs["Tic-Tac-Toe"], true))
 }
 
 func main() {

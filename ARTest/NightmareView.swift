@@ -42,6 +42,8 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         mat.blending = .transparent(opacity: 0.75)
         return mat
     }()
+    lazy var coneMesh = convertSCNGeometryToMeshResource(geometry: SCNCone(topRadius: 0, bottomRadius: 0.5, height: 1), name: "Cone")
+    lazy var cylinderMesh = convertSCNGeometryToMeshResource(geometry: SCNCylinder(radius: 0.5, height: 1), name: "Cylinder")
     
     class Instance {
         let id: Int
@@ -75,7 +77,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         session.delegate = frameDelegate
         renderOptions.insert(.disableMotionBlur)
 
-        conn = WebSocketTaskConnection(url: URL(string: "ws://192.168.1.6:8080/")!)
+        conn = WebSocketTaskConnection(url: URL(string: "wss://5fe6-174-20-239-98.ngrok-free.app/")!)
         conn.delegate = self
         conn.connect()
         
@@ -396,6 +398,22 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
             entity.transform.scale = simd_float3(
                 Float(object.size[0]), Float(object.size[1]), Float(object.size[2])
             )
+        case 3: // cylinder
+            entity = Entity()
+            let cylinderEntity = ModelEntity(mesh: cylinderMesh, materials: [material])
+            cylinderEntity.transform.rotation = simd_quatf(from: simd_float3(0, 1, 0), to: simd_float3(0, 0, 1))
+            entity.addChild(cylinderEntity)
+            entity.transform.scale = simd_float3(
+                Float(object.size[0]), Float(object.size[1]), Float(object.size[2])
+            )
+        case 4: // cone
+            entity = Entity()
+            let cylinderEntity = ModelEntity(mesh: coneMesh, materials: [material])
+            cylinderEntity.transform.rotation = simd_quatf(from: simd_float3(0, 1, 0), to: simd_float3(0, 0, 1))
+            entity.addChild(cylinderEntity)
+            entity.transform.scale = simd_float3(
+                Float(object.size[0]), Float(object.size[1]), Float(object.size[2])
+            )
         case 5:
             let alignment: CTTextAlignment = switch object.textalign {
             case "center": .center
@@ -433,6 +451,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         entity.transform.translation = simd_float3(
             Float(object.pos[0]), Float(object.pos[1]), Float(object.pos[2])
         )
+        entity.transform.rotation = simd_quatf(ix: Float(object.rot[0]), iy: Float(object.rot[1]), iz: Float(object.rot[2]), r: Float(object.rot[3]))
         
         if object.id != "" {
             entity.name = object.id
@@ -522,6 +541,58 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         default: .black
         }
     }
+    
+    func convertSCNGeometryToMeshResource(geometry: SCNGeometry, name: String) -> MeshResource {
+        let source = geometry.sources(for: .vertex).first!
+        let indices = geometry.elements.first!.data
+
+        let vertexCount = source.vectorCount
+        let stride = source.dataStride
+        let offset = source.dataOffset
+        let data = source.data
+
+        // Extract vertex positions
+        var vertices: [SIMD3<Float>] = []
+        for i in 0..<vertexCount {
+            let start = data.startIndex + (i * stride) + offset
+            let end = start + 12
+            let vertexData = data[start..<end]
+            let vertex = vertexData.withUnsafeBytes { buffer in
+                return SIMD3<Float>(buffer.load(fromByteOffset: 0, as: Float.self),
+                                    buffer.load(fromByteOffset: 4, as: Float.self),
+                                    buffer.load(fromByteOffset: 8, as: Float.self))
+            }
+            vertices.append(vertex)
+        }
+
+        // Extract indices
+        assert(geometry.elements.first!.primitiveType == .triangles)
+        let indexCount = geometry.elements.first!.primitiveCount * 3  // Assuming triangles
+        let indexSize = geometry.elements.first!.bytesPerIndex // Size of each index (2 for UInt16, 4 for UInt32)
+        var indicesArray: [UInt32] = []
+        for i in 0..<indexCount {
+            indices.withUnsafeBytes { buffer in
+                if indexSize == 2 {
+                    // 16-bit indices (UInt16)
+                    let index: UInt16 = buffer.load(fromByteOffset: i * indexSize, as: UInt16.self)
+                    indicesArray.append(UInt32(index))
+                } else if indexSize == 4 {
+                    // 32-bit indices (UInt32)
+                    let index: UInt32 = buffer.load(fromByteOffset: i * indexSize, as: UInt32.self)
+                    indicesArray.append(index)
+                } else {
+                    fatalError("Unsupported index size")
+                }
+            }
+        }
+
+        // Create RealityKit MeshResource from vertices and indices
+        var descriptor = MeshDescriptor(name: name)
+        descriptor.positions = MeshBuffers.Positions(vertices)
+        descriptor.primitives = .triangles(indicesArray)
+        
+        return try! MeshResource.generate(from: [descriptor])
+    }
 }
 
 struct ServerMessage: Codable {
@@ -565,6 +636,7 @@ struct Object: Codable {
     var type: Int
     var id: String
     var pos: [Float64]
+    var rot: [Float64]
     var size: [Float64]
     var color: String
     var text: String
