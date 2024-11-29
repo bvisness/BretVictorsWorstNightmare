@@ -16,7 +16,7 @@ const instanceTickRate = time.Millisecond * 20
 const clientUpdateRate = time.Millisecond * 200
 
 // TODO: Save these persistently
-var programs = make(map[string]*program.Program)
+var programs []*program.Program
 var instances []*program.Instance
 var tag2instance = make(map[int]InstanceID)
 
@@ -37,12 +37,15 @@ func init() {
 		Name:   "Stopwatch",
 		Source: program.Vectors, // HACK
 	})
-	// tag2instance[0] = utils.Must1(instantiate(programs["Tic-Tac-Toe"], true))
+	tag2instance[0] = utils.Must1(instantiate(programs[0], true))
 	// tag2instance[1] = utils.Must1(instantiate(programs["Tic-Tac-Toe"], true))
 }
 
 func registerProgram(p *program.Program) {
-	programs[p.Name] = p
+	// TODO: This could have nasty race conditions if multiple people
+	// are editing programs at once.
+	p.ID = len(programs)
+	programs = append(programs, p)
 }
 
 func instantiate(p *program.Program, init bool) (InstanceID, error) {
@@ -99,12 +102,8 @@ func main() {
 					log.Printf("Tapped on ID %v", msg.EntityID)
 					instances[msg.Instance].Tap(msg.EntityID)
 				case MessageTypeInstantiate:
-					log.Printf("Instantiating program %s!", msg.Instantiate.Program)
-					p, ok := programs[msg.Instantiate.Program]
-					if !ok {
-						log.Printf("wtf is program %s", msg.Instantiate.Program)
-						break
-					}
+					log.Printf("Instantiating program %d!", msg.Instantiate.ProgramID)
+					p := programs[msg.Instantiate.ProgramID]
 
 					init := len(msg.Instantiate.Data) == 0
 					newInstanceID, err := instantiate(p, init)
@@ -139,9 +138,10 @@ func main() {
 			for id, instance := range instances {
 				// Generate instance updates and track which instances are active
 				update := InstanceUpdate{
-					Instance: InstanceID(id),
-					Program:  instance.Program.Name,
-					Data:     utils.Must1(msgpack.Marshal(instance.Data)),
+					Instance:    InstanceID(id),
+					ProgramID:   instance.Program.ID,
+					ProgramName: instance.Program.Name,
+					Data:        utils.Must1(msgpack.Marshal(instance.Data)),
 				}
 				for tag, otherID := range tag2instance {
 					if InstanceID(id) == otherID {
@@ -222,10 +222,11 @@ type SceneUpdate struct {
 }
 
 type InstanceUpdate struct {
-	Instance InstanceID `msgpack:"instance"`
-	Program  string     `msgpack:"program"`
-	Data     []byte     `msgpack:"data"`
-	Tag      *int       `msgpack:"tag,omitempty"`
+	Instance    InstanceID `msgpack:"instance"`
+	ProgramID   int        `msgpack:"programID"`
+	ProgramName string     `msgpack:"programName"`
+	Data        []byte     `msgpack:"data"`
+	Tag         *int       `msgpack:"tag,omitempty"`
 }
 
 type ClientMessage struct {
@@ -236,9 +237,9 @@ type ClientMessage struct {
 }
 
 type InstantiateRequest struct {
-	Program string `msgpack:"program"`
-	Data    []byte `msgpack:"data"`
-	Tag     int    `msgpack:"tag"`
+	ProgramID int    `msgpack:"programID"`
+	Data      []byte `msgpack:"data"`
+	Tag       int    `msgpack:"tag"`
 }
 
 type ServerMessageType int

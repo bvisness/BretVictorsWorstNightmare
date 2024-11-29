@@ -24,6 +24,7 @@ var Vectors string
 var PPrint string
 
 type Program struct {
+	ID     int
 	Name   string
 	Source string
 }

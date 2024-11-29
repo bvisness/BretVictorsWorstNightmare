@@ -47,24 +47,27 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     
     class Instance {
         let id: Int
-        let program: String
+        let programID: Int
+        let programName: String
         let root: Entity = Entity()
         var data: Data?
         var sceneHash: Int = 0
         
-        init(id: Int, program: String) {
+        init(id: Int, programID: Int, programName: String) {
             self.id = id
-            self.program = program
+            self.programID = programID
+            self.programName = programName
         }
     }
-    struct PendingProgram {
-        let program: String
+    struct Program {
+        let id: Int
+        let name: String
         let data: Data?
     }
     var instances: [Int: Instance] = [:]
-    var copiedProgram: PendingProgram?
+    var copiedProgram: Program?
     var copiedProgramPreview: Entity?
-    var scannedProgram: String?
+    var scannedProgram: Program?
     var detectedTags = Set<Int>()
     
     var conn: WebSocketConnection!
@@ -129,7 +132,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         }
         
         if copiedProgram != nil && copiedProgramPreview == nil {
-            let preview = renderTag(program: copiedProgram!.program, tagID: .none)
+            let preview = renderTag(programName: copiedProgram!.name, tagID: .none)
             preview.transform.translation = simd_float3(0.02, -0.01, -0.05)
             preview.transform.scale = simd_float3(0.2, 0.2, 0.2)
             preview.transform.rotation = simd_quatf(angle: .pi/2, axis: simd_float3(0, 0, 1))
@@ -174,22 +177,22 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
             }
             
             let message = ClientMessage(type: .instantiate, instantiate: InstantiateRequest(
-                program: paste.program,
+                programID: paste.id,
                 data: paste.data,
                 tag: tag
             ))
             let data = try! MessagePackEncoder().encode(message)
             conn.send(data: data)
             copiedProgram = .none
-            print("Requested instantiation of program \(paste.program) for tag \(tag)")
+            print("Requested instantiation of program \(paste.id) for tag \(tag)")
         } else if sender.direction == .down {
             if let tag = tag, let instanceID = tagInstance(tag: tag) {
                 // Swiping down copies this tag's program/data to the phone
                 let instance = instances[instanceID]!
-                copyProgram(PendingProgram(program: instance.program, data: instance.data))
-                print("Copied instance of program \(instance.program)")
+                copyProgram(Program(id: instance.programID, name: instance.programName, data: instance.data))
+                print("Copied instance of program \(instance.programID)")
             } else if let scanned = scannedProgram {
-                copyProgram(PendingProgram(program: scanned, data: nil))
+                copyProgram(scanned)
                 print("Copied fresh instance of program \(scanned)")
             } else {
                 print("Nothing to swipe down on")
@@ -205,7 +208,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         return nil
     }
     
-    func copyProgram(_ p: PendingProgram) {
+    func copyProgram(_ p: Program) {
         copiedProgram = p
         copiedProgramPreview?.removeFromParent()
         copiedProgramPreview = nil
@@ -301,7 +304,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
                         instance.root.addChild(rendered)
                     }
                     
-                    let tagVisual = self.renderTag(program: instance.program, tagID: instance.id)
+                    let tagVisual = self.renderTag(programName: instance.programName, tagID: instance.id)
                     instance.root.addChild(tagVisual)
                 }
             }
@@ -312,7 +315,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
                 if let i = instances[update.instance] {
                     instance = i
                 } else {
-                    instance = Instance(id: update.instance, program: update.program)
+                    instance = Instance(id: update.instance, programID: update.programID, programName: update.programName)
                     instances[instance.id] = instance
                 }
                 instance.data = update.data
@@ -366,8 +369,9 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
             print("Non-nightmare QR code.")
             return
         }
-        scannedProgram = payload.substring(from: "nightmare://".count)
-        print("Scanned program \(scannedProgram!)")
+        let parts = payload.substring(from: "nightmare://".count).split(separator: "/")
+        scannedProgram = Program(id: Int(String(parts[0]))!, name: String(parts[1]), data: nil)
+        print("Scanned program \(scannedProgram!.name)")
     }
     
     func renderEntity(object: Object) -> Entity? {
@@ -466,7 +470,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         return entity
     }
     
-    func renderTag(program: String, tagID: Int?) -> Entity {
+    func renderTag(programName: String, tagID: Int?) -> Entity {
         let tagVisual = Entity()
         
         let tagCover = ModelEntity(
@@ -478,7 +482,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         )
         tagCover.transform.translation.z = 0.0025
         let tagProgram = renderText(
-            program,
+            programName,
             materials: [SimpleMaterial(color: .black, roughness: 0.25, isMetallic: false)],
             font: .systemFont(ofSize: 0.01),
             frame: CGPoint(x: FrameDelegate.tagOuterSize, y: FrameDelegate.tagOuterSize),
@@ -620,7 +624,8 @@ struct SceneUpdate: Codable {
 
 struct InstanceUpdate: Codable {
     var instance: Int
-    var program: String
+    var programID: Int
+    var programName: String
     var data: Data
     var tag: Int?
 }
@@ -639,7 +644,7 @@ struct ClientMessage: Codable {
 }
 
 struct InstantiateRequest: Codable {
-    var program: String
+    var programID: Int
     var data: Data?
     var tag: Int
 }
