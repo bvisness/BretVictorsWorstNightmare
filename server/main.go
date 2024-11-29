@@ -64,7 +64,11 @@ func main() {
 	go runPrograms()
 
 	var upgrader = websocket.Upgrader{}
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.Handle("/", http.FileServer(http.Dir("public")))
+	http.HandleFunc("/edit", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "public/edit.html")
+	})
+	http.HandleFunc("/live", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println(err)

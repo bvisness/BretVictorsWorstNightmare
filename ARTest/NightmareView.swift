@@ -77,7 +77,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         session.delegate = frameDelegate
         renderOptions.insert(.disableMotionBlur)
 
-        conn = WebSocketTaskConnection(url: URL(string: "wss://5fe6-174-20-239-98.ngrok-free.app/")!)
+        conn = WebSocketTaskConnection(url: URL(string: "wss://1fdb-135-131-41-2.ngrok-free.app/live")!)
         conn.delegate = self
         conn.connect()
         
@@ -129,7 +129,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         }
         
         if copiedProgram != nil && copiedProgramPreview == nil {
-            let preview = renderTag(program: copiedProgram!.program)
+            let preview = renderTag(program: copiedProgram!.program, tagID: .none)
             preview.transform.translation = simd_float3(0.02, -0.01, -0.05)
             preview.transform.scale = simd_float3(0.2, 0.2, 0.2)
             preview.transform.rotation = simd_quatf(angle: .pi/2, axis: simd_float3(0, 0, 1))
@@ -301,7 +301,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
                         instance.root.addChild(rendered)
                     }
                     
-                    let tagVisual = self.renderTag(program: instance.program)
+                    let tagVisual = self.renderTag(program: instance.program, tagID: instance.id)
                     instance.root.addChild(tagVisual)
                 }
             }
@@ -466,13 +466,13 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         return entity
     }
     
-    func renderTag(program: String) -> Entity {
+    func renderTag(program: String, tagID: Int?) -> Entity {
         let tagVisual = Entity()
         
         let tagCover = ModelEntity(
             mesh: .generateBox(
                 size: simd_float3(Float(FrameDelegate.tagOuterSize), Float(FrameDelegate.tagOuterSize), 0.005),
-                cornerRadius: 0.0002
+                cornerRadius: 0.0006
             ),
             materials: [tagCoverMaterial]
         )
@@ -488,6 +488,18 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         tagProgram.transform.translation.z = 0.005
         tagVisual.addChild(tagCover)
         tagVisual.addChild(tagProgram)
+        
+        if let tagID = tagID {
+            let tagCode = renderText(
+                tagIDToCode(tagID),
+                materials: [SimpleMaterial(color: .black, roughness: 0.25, isMetallic: false)],
+                font: .systemFont(ofSize: 0.005),
+                frame: CGPoint(x: FrameDelegate.tagOuterSize, y: FrameDelegate.tagOuterSize),
+                alignment: .center
+            )
+            tagCode.transform.translation.y = -Float(FrameDelegate.tagOuterSize) / 2 - 0.005
+            tagVisual.addChild(tagCode)
+        }
         
         return tagVisual
     }

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<head>
+  <title>AR Editor</title>
+  <link rel="stylesheet" href="tachyons.min.css">
+  <script src="/monaco/min/vs/loader.js"></script>
+</head>
+
+<body>
+  <div class="absolute absolute--fill flex">
+    <div id="editor" class="flex-grow-1 overflow-hidden"></div>
+    <div class="w5">Pweview uwu</div>
+  </div>
+
+  <script>
+    const editorConfig = {
+      language: "lua",
+      theme: "vs-dark",
+
+      fontSize: 14,
+      automaticLayout: true,
+      minimap: {
+        enabled: false,
+      },
+      tabSize: 2,
+      insertSpaces: true,
+      detectIndentation: false,
+    };
+    require.config({ paths: { vs: 'monaco/min/vs' } });
+    require(['vs/editor/editor.main'], function () {
+      const editor = monaco.editor.create(document.querySelector('#editor'), editorConfig);
+    });
+  </script>
+</body>

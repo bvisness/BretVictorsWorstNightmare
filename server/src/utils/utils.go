@@ -34,3 +34,12 @@ func Assert[T comparable](value T, msg ...any) {
 		panic(finalMsg)
 	}
 }
+
+func FirstError(errs ...error) error {
+	for _, err := range errs {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
