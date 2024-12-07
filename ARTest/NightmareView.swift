@@ -77,7 +77,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         session.delegate = frameDelegate
         renderOptions.insert(.disableMotionBlur)
 
-        conn = WebSocketTaskConnection(url: URL(string: "wss://5fe6-174-20-239-98.ngrok-free.app/")!)
+        conn = WebSocketTaskConnection(url: URL(string: "wss://86c3-24-152-157-237.ngrok-free.app/")!)
         conn.delegate = self
         conn.connect()
         
