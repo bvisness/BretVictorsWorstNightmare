@@ -64,6 +64,30 @@ func main() {
 	go runPrograms()
 
 	var upgrader = websocket.Upgrader{}
+	http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Hello, world!\n"))
+	})
+	http.HandleFunc("/testws", func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		defer conn.Close()
+
+		for {
+			t, data, err := conn.ReadMessage()
+			if err != nil {
+				log.Printf("Error reading from client: %v", err)
+				return
+			}
+			if t != websocket.TextMessage {
+				continue
+			}
+
+			conn.WriteMessage(websocket.TextMessage, data)
+		}
+	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
