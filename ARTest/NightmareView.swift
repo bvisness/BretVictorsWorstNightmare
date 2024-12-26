@@ -47,10 +47,11 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
     
     class Instance {
         let id: Int
-        let programID: Int
-        let programName: String
+        var programID: Int
+        var programName: String
         let root: Entity = Entity()
         var data: Data?
+        var tagID: Int?
         var sceneHash: Int = 0
         
         init(id: Int, programID: Int, programName: String) {
@@ -80,7 +81,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
         session.delegate = frameDelegate
         renderOptions.insert(.disableMotionBlur)
 
-        conn = WebSocketTaskConnection(url: URL(string: "wss://1fdb-135-131-41-2.ngrok-free.app/live")!)
+        conn = WebSocketTaskConnection(url: URL(string: "ws://192.168.0.91:8080/live")!)
         conn.delegate = self
         conn.connect()
         
@@ -304,7 +305,7 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
                         instance.root.addChild(rendered)
                     }
                     
-                    let tagVisual = self.renderTag(programName: instance.programName, tagID: instance.id)
+                    let tagVisual = self.renderTag(programName: instance.programName, tagID: instance.tagID)
                     instance.root.addChild(tagVisual)
                 }
             }
@@ -318,7 +319,10 @@ class Nightmare: ARView, WebSocketConnectionDelegate, NightmareTrackingDelegate 
                     instance = Instance(id: update.instance, programID: update.programID, programName: update.programName)
                     instances[instance.id] = instance
                 }
+                instance.programID = update.programID
+                instance.programName = update.programName
                 instance.data = update.data
+                instance.tagID = update.tag
 
                 if let tag = update.tag, detectedTags.contains(tag) {
                     let tagEntity = tagEntities[tag]

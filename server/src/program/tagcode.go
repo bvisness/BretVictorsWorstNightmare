@@ -1,6 +1,7 @@
 package program
 
 import (
+	"errors"
 	"fmt"
 	"math"
 
@@ -42,6 +43,10 @@ func TagIDToCode(id int) string {
 }
 
 func CodeToTagID(code string) (int, error) {
+	if len(code) != 4 {
+		return 0, errors.New("invalid length for tag code")
+	}
+
 	b0, err0 := alphabetIndex(code[0])
 	b1, err1 := alphabetIndex(code[1])
 	b2, err2 := alphabetIndex(code[2])

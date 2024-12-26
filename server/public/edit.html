@@ -2,16 +2,31 @@
 <head>
   <title>AR Editor</title>
   <link rel="stylesheet" href="tachyons.min.css">
+  <link rel="stylesheet" href="style.css">
   <script src="/monaco/min/vs/loader.js"></script>
+  <script>
+    const baseURL = "http://localhost:8080";
+  </script>
 </head>
 
-<body>
-  <div class="absolute absolute--fill flex">
-    <div id="editor" class="flex-grow-1 overflow-hidden"></div>
-    <div class="w5">Pweview uwu</div>
+<body class="sans-serif bg-dark-gray white">
+  <div class="absolute absolute--fill flex flex-column">
+    <div class="pa2 bb b--black-90">
+      <form onsubmit="loadTag(event)" class="flex items-center g1">
+        <input id="tagcode" placeholder="Tag ID">
+        <input type="submit" value="Load">
+        <div id="tagerror" class="red"></div>
+      </form>
+    </div>
+    <div class="flex flex-grow-1">
+      <div id="editor" class="flex-grow-1 overflow-hidden"></div>
+      <div class="w5">Pweview uwu</div>
+    </div>
   </div>
 
   <script>
+    let editor;
+
     const editorConfig = {
       language: "lua",
       theme: "vs-dark",
@@ -27,7 +42,54 @@
     };
     require.config({ paths: { vs: 'monaco/min/vs' } });
     require(['vs/editor/editor.main'], function () {
-      const editor = monaco.editor.create(document.querySelector('#editor'), editorConfig);
+      editor = monaco.editor.create(document.querySelector('#editor'), editorConfig);
+      editor.addCommand(monaco.KeyMod.CtrlCmd|monaco.KeyCode.KeyS, function() {
+        saveTag();
+      });
     });
+
+    async function loadTag(e) {
+      e.preventDefault();
+      const code = tagcode.value;
+      console.log(`Loading tag ${code}`);
+
+      tagerror.innerText = "";
+      editor.setValue("");
+      // TODO: Check for unsaved changes
+
+      const res = await fetch(`${baseURL}/tag?code=${code}`);
+      if (res.status === 200) {
+        const program = await res.json();
+        editor.setValue(program.source);
+      } else if (res.status === 204) {
+        console.log("Time for a new program yay");
+      } else {
+        const err = await res.json();
+        tagerror.innerText = err.error;
+      }
+    }
+
+    async function saveTag() {
+      const code = tagcode.value;
+      console.log(`Saving program to tag ${code}`);
+
+      tagerror.innerText = "";
+
+      const res = await fetch(`${baseURL}/tag?code=${code}`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: "Test Program", // TODO
+          source: editor.getValue(),
+        }),
+      });
+      if (res.status === 200) {
+        console.log("Updated instance");
+      } else if (res.status === 201) {
+        console.log("Created new instance");
+      } else {
+        const err = await res.json();
+        tagerror.innerText = err.error;
+      }
+    }
   </script>
 </body>

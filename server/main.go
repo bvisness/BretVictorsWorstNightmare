@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -37,7 +40,7 @@ func init() {
 		Name:   "Stopwatch",
 		Source: program.Vectors, // HACK
 	})
-	tag2instance[0] = utils.Must1(instantiate(programs[0], true))
+	tag2instance[4] = utils.Must1(instantiate(programs[0], true))
 	// tag2instance[1] = utils.Must1(instantiate(programs["Tic-Tac-Toe"], true))
 }
 
@@ -70,6 +73,66 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir("public")))
 	http.HandleFunc("/edit", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "public/edit.html")
+	})
+	http.HandleFunc("/tag", func(w http.ResponseWriter, r *http.Request) {
+		code := r.URL.Query().Get("code")
+		id, err := program.CodeToTagID(code)
+		if err != nil {
+			respondWithError(w, http.StatusNotFound, errors.New("Not a valid tag ID"))
+			return
+		}
+		instanceID, foundInstance := tag2instance[id]
+
+		switch r.Method {
+		case http.MethodGet:
+			if !foundInstance {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+			instance := instances[instanceID]
+			respondWithJSON(w, http.StatusOK, instance.Program)
+		case http.MethodPost:
+			type req struct {
+				Name   string `json:"name"`
+				Source string `json:"source"`
+			}
+			body := readJSON[req](r)
+			if body.Name == "" {
+				respondWithError(w, http.StatusBadRequest, errors.New("Program name was empty"))
+				return
+			}
+
+			// TODO: This is somewhat naive in that it creates a new program
+			// literally every time, but hey, it's easier that way for now.
+
+			p := &program.Program{
+				Name:   body.Name,
+				Source: body.Source,
+			}
+			registerProgram(p)
+
+			type res struct {
+				InstanceID InstanceID `json:"instanceID"`
+			}
+			if foundInstance {
+				instance := instances[instanceID]
+				instance.SetProgram(p)
+				respondWithJSON(w, http.StatusOK, res{
+					InstanceID: instanceID,
+				})
+				return
+			} else {
+				instanceID, err := instantiate(p, true)
+				if err != nil {
+					respondWithError(w, http.StatusBadRequest, fmt.Errorf("Failed to instantiate program: %w", err))
+					return
+				}
+				respondWithJSON(w, http.StatusCreated, res{
+					InstanceID: instanceID,
+				})
+				return
+			}
+		}
 	})
 	http.HandleFunc("/live", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
@@ -208,6 +271,27 @@ func runPrograms() {
 		}
 		renderedScenes = newRenderedScenes
 	}
+}
+
+func respondWithJSON(w http.ResponseWriter, code int, thing any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(utils.Must1(json.Marshal(thing)))
+}
+
+func respondWithError(w http.ResponseWriter, code int, err error) {
+	type res struct {
+		Error string `json:"error"`
+	}
+	respondWithJSON(w, code, res{Error: err.Error()})
+}
+
+func readJSON[T any](r *http.Request) T {
+	defer r.Body.Close()
+	bodyBytes := utils.Must1(io.ReadAll(r.Body))
+	var dst T
+	utils.Must(json.Unmarshal(bodyBytes, &dst))
+	return dst
 }
 
 type ServerMessage struct {

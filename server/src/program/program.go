@@ -24,9 +24,9 @@ var Vectors string
 var PPrint string
 
 type Program struct {
-	ID     int
-	Name   string
-	Source string
+	ID     int    `json:"id"`
+	Name   string `json:"name"`
+	Source string `json:"source"`
 }
 
 type Instance struct {
@@ -188,19 +188,26 @@ func (d *Data) MapSet(key any, value Data) (*Data, bool) {
 }
 
 func Instantiate(p *Program) (*Instance, error) {
-	L := lua.NewState()
 	i := &Instance{
-		L: L,
 		Data: Data{
 			Type: TypeTable,
 		},
-
-		Program: p,
 	}
+	err := i.SetProgram(p)
+	if err != nil {
+		return nil, err
+	}
+	return i, nil
+}
+
+func (i *Instance) SetProgram(p *Program) error {
+	L := lua.NewState()
+	i.L = L
+	i.Program = p
 
 	err := L.DoString(PPrint)
 	if err != nil {
-		return nil, fmt.Errorf("failed to include pprint: %w", err)
+		return fmt.Errorf("failed to include pprint: %w", err)
 	}
 
 	ar := L.NewTable()
@@ -259,10 +266,10 @@ func Instantiate(p *Program) (*Instance, error) {
 
 	err = L.DoString(p.Source)
 	if err != nil {
-		return nil, fmt.Errorf("failed to run Lua source: %w", err)
+		return fmt.Errorf("failed to run Lua source: %w", err)
 	}
 
-	return i, nil
+	return nil
 }
 
 func (i *Instance) Init() error {
